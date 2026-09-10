@@ -1,0 +1,1258 @@
+Build me a complete, production-ready personal portfolio website with a private admin CMS.
+
+This is NOT a printable portfolio or PDF portfolio. It must be a real responsive website that I can deploy publicly and update myself later without editing code.
+
+==================================================
+1. TECH STACK
+==================================================
+
+Use:
+
+- Next.js with App Router
+- TypeScript
+- Tailwind CSS
+- Supabase
+  - Supabase Auth for admin authentication
+  - Supabase Postgres for portfolio content
+  - Supabase Storage for images
+- Vercel-ready deployment
+
+Do NOT build a fake admin interface with hardcoded data.
+
+All portfolio content must actually be editable through the admin dashboard and stored in Supabase.
+
+The public website should read its content dynamically from Supabase.
+
+Keep the architecture clean and understandable for someone who is not an experienced developer.
+
+==================================================
+2. PRIMARY GOAL
+==================================================
+
+Create an elegant editorial-style portfolio for:
+
+SUJIN LEE
+
+Primary professional positioning:
+
+Marketing
+Brand Development
+Product
+E-Commerce
+Visual Content
+Creative Direction
+
+The portfolio should feel more like a refined fashion / fragrance / creative studio website than a generic student portfolio.
+
+It should communicate that I can take ideas from:
+
+research
+→ concept
+→ branding
+→ visual identity
+→ content
+→ product
+→ digital experience
+→ market execution
+
+==================================================
+3. VISUAL DIRECTION
+==================================================
+
+Design aesthetic:
+
+- editorial
+- minimal
+- sophisticated
+- quiet luxury
+- contemporary fashion magazine
+- strong typography
+- generous white space
+- image-led
+- clean grids
+- restrained animation
+
+Color palette:
+
+Light mode:
+- warm off-white / slightly gray ivory background
+- dark charcoal or brown-gray text
+- subtle warm gray borders
+
+Dark mode:
+- charcoal, NOT pure black
+- soft off-white text
+- low contrast enough to avoid eye strain
+
+Typography:
+
+- elegant editorial serif for large headings
+- highly readable sans-serif for body/interface text
+- use free/open-source fonts only
+- typography should feel refined and fashion-oriented
+
+Avoid:
+
+- bright corporate blue
+- gradients
+- startup/SaaS aesthetic
+- excessive rounded cards
+- colorful skill pills everywhere
+- generic template appearance
+- excessive animation
+- clutter
+
+Images should be the main visual focus.
+
+==================================================
+4. SITE STRUCTURE
+==================================================
+
+Main public navigation:
+
+SUJIN LEE                         WORK    PROFILE
+
+Header should remain minimal and preferably sticky.
+
+Clicking SUJIN LEE returns to the top.
+
+WORK scrolls to the portfolio work section.
+
+PROFILE opens an elegant right-side drawer / panel instead of navigating away from the current project.
+
+==================================================
+5. HERO SECTION
+==================================================
+
+Create a minimalist editorial hero.
+
+Suggested initial copy:
+
+SUJIN LEE
+
+Marketing, brand development,
+product thinking
+& visual storytelling.
+
+Based in Atlanta, Georgia.
+
+Short supporting text:
+
+“I develop ideas from concept to execution across branding, digital products, e-commerce, photography, and content.”
+
+Include a subtle:
+
+Selected Work ↓
+
+All of this copy must be editable from the admin dashboard.
+
+==================================================
+6. SELECTED WORK
+==================================================
+
+Create dynamic portfolio project sections.
+
+Do NOT hardcode a fixed number of projects.
+
+I must be able to add, delete, edit, reorder, hide, or publish projects from /admin.
+
+Each project should support:
+
+- project title
+- project subtitle
+- category
+- year
+- date or date range
+- project status
+- featured / not featured
+- cover image
+- optional cover video
+- short description
+- long case study content
+- tags
+- project URL
+- external social link
+- project role
+- tools
+- project order
+- visibility
+- draft / published state
+
+Projects should support flexible modular content blocks.
+
+==================================================
+7. MODULAR CASE STUDY BUILDER
+==================================================
+
+This is very important.
+
+Do not make every project use the same rigid text template.
+
+In the admin dashboard, I should be able to build each case study using content blocks.
+
+Supported blocks should include:
+
+1. Large image
+2. Image grid
+3. Two-column images
+4. Full-width image
+5. Before / After slider
+6. Video
+7. Heading
+8. Paragraph
+9. Pull quote / large statement
+10. Statistics
+11. Timeline
+12. Process steps
+13. Moodboard grid
+14. External link/button
+15. Role / tools metadata block
+16. Caption
+17. Spacer
+
+I must be able to:
+
+- add blocks
+- remove blocks
+- edit blocks
+- drag and drop to reorder blocks
+- preview changes
+- save as draft
+- publish changes
+
+==================================================
+8. FEATURED PROJECT 01:
+MAISON DE L’ÉTÉ
+==================================================
+
+Seed the CMS with this initial project.
+
+Title:
+
+MAISON DE L’ÉTÉ
+
+Subtitle:
+
+Independent Fragrance Brand Development
+
+Categories:
+
+Brand Development
+Creative Direction
+Product Development
+Visual Identity
+
+Status:
+
+In Development
+
+Timeline:
+
+2026–Present
+
+The project is an independently developed fragrance brand.
+
+The portfolio should NOT claim that the commercial product has launched.
+
+It should accurately present it as an active pre-launch / product-development project.
+
+Suggested introduction:
+
+“I independently developed MAISON DE L’ÉTÉ from its initial concept through brand strategy, fragrance direction, visual identity, product prototyping, supplier research, and digital content development.”
+
+Include project sections that can later be edited:
+
+01 — Concept
+
+- brand positioning
+- storytelling
+- naming
+- slogans
+- copywriting
+- emotional brand world
+- target customer
+- visual direction
+
+02 — Research & References
+
+Support large Pinterest-style reference and moodboard grids.
+
+Show that research informed:
+
+- fragrance direction
+- packaging
+- photography
+- typography
+- product styling
+- visual identity
+
+03 — Fragrance Development
+
+The project includes original fragrance concepts and custom physical prototypes.
+
+Custom fragrance prototypes were commissioned through independent perfumers.
+
+Support products such as:
+
+“When Summer Sleeps”
+
+and future fragrance concepts.
+
+Each fragrance should optionally display:
+
+- fragrance name
+- story
+- top notes
+- middle notes
+- base notes
+- reference imagery
+- prototype photograph
+- development notes
+
+04 — Visual Identity
+
+Show:
+
+- logo development
+- typography
+- label design
+- business card design
+- visual system
+- iterations
+
+Clearly label designs that were not physically manufactured as:
+
+Design Concept
+
+or
+
+Conceptual Design
+
+05 — Product & Packaging
+
+Show:
+
+- perfume bottle design concepts
+- label applications
+- packaging concepts
+- mockups
+- iterations
+- AI-assisted renderings
+
+Do not imply conceptual product renderings are manufactured products.
+
+06 — Production Research
+
+Show the real business-development side of the project.
+
+Research included contacting:
+
+- fragrance suppliers
+- perfume bottle manufacturers
+- packaging suppliers
+- printing suppliers
+- fragrance workshops
+- workshops in Grasse, France
+
+The purpose was to evaluate:
+
+- price
+- minimum order quantity
+- sourcing
+- production feasibility
+- manufacturing options
+
+Allow screenshots of supplier communications with captions.
+
+07 — 72-Hour Creative Sprint
+
+A major part of the initial brand system was created during an intensive three-day independent sprint.
+
+Create an editorial timeline:
+
+DAY 01
+Strategy
+Naming
+Storytelling
+Fragrance concepts
+Brand positioning
+
+DAY 02
+Logo
+Typography
+Labels
+Packaging direction
+Bottle concepts
+
+DAY 03
+Campaign imagery
+Social media
+Website concept
+Video
+Digital content
+
+Add this clarification:
+
+“Product development, supplier research, and fragrance prototyping continued beyond the initial three-day sprint.”
+
+08 — AI-Assisted Creative Direction
+
+This section must present AI professionally.
+
+Do NOT make it sound like images were generated with one click.
+
+The workflow included:
+
+reference research
+→ reference curation
+→ prompt development
+→ generation
+→ evaluation
+→ prompt revision
+→ multiple iterations
+→ image selection
+→ retouching
+→ final visual direction
+
+Suggested copy:
+
+“Generative AI was used as a production tool rather than a substitute for creative direction. I independently curated references, developed prompts, evaluated outputs, directed revisions, and completed final image refinement and retouching.”
+
+Create layouts where I can visually show:
+
+REFERENCE
+→ INITIAL OUTPUT
+→ REVISION
+→ RETOUCHING
+→ FINAL IMAGE
+
+09 — Digital Presence
+
+Support:
+
+- Instagram imagery
+- campaign content
+- website concepts
+- product upload concepts
+- video
+- motion content
+- social media feed layouts
+
+Allow an external Instagram button.
+
+10 — My Role
+
+Support a clean metadata list:
+
+Brand Strategy
+Creative Direction
+Copywriting
+Naming
+Storytelling
+Fragrance Concept Development
+Visual Identity
+Logo Design
+Typography
+Label Design
+Packaging Concepts
+Supplier Research
+Art Direction
+Prompt Development
+AI-Assisted Visual Production
+Photo Retouching
+Social Media Content
+Web Design
+Video Content
+
+==================================================
+9. FEATURED PROJECT 02:
+THE READER.
+==================================================
+
+Seed another project:
+
+The Reader.
+
+Subtitle:
+
+Product Concept · UX/UI · Branding · AI-Assisted Development
+
+Status:
+
+In Development
+
+Description:
+
+A minimalist bilingual e-reader designed to reduce friction between reading, dictionary lookup, and translation.
+
+Include editable sections:
+
+The Problem
+
+Existing reading tools often interrupt the reading experience by separating vocabulary lookup, translation, and text navigation.
+
+Product Features
+
+- TXT support
+- EPUB support
+- dictionary
+- translation
+- highlighting
+- bookmarks
+- saved vocabulary
+- custom fonts
+- multilingual expansion
+
+Process
+
+Support screenshots showing:
+
+initial concept
+→ interface iterations
+→ current interface
+
+My Role
+
+- Product Concept
+- UX/UI Direction
+- Brand Identity
+- Feature Planning
+- Product Requirements
+- Competitive Research
+- AI-Assisted Development
+
+Include:
+
+“Source code is maintained in a private repository.”
+
+Do not require the private source code to be linked publicly.
+
+==================================================
+10. E-COMMERCE PROJECT / EXPERIENCE
+==================================================
+
+Create an editable section for:
+
+Poshmark & eBay Reselling
+
+Categories:
+
+E-Commerce
+Pricing
+Merchandising
+Customer Experience
+
+Support fields for:
+
+- items sold
+- revenue
+- active listings
+- seller rating
+- platform
+- product category
+
+These metrics should be optional because I may add them later.
+
+Content should support showing:
+
+- product photos
+- listings
+- merchandising
+- pricing examples
+- sales screenshots
+- customer experience
+
+Initial description:
+
+“Independently manage product selection, pricing, photography, listing optimization, customer communication, fulfillment, and post-sale service across online resale marketplaces.”
+
+==================================================
+11. PORTRAIT PHOTOGRAPHY
+==================================================
+
+Create a photography section:
+
+PORTRAIT
+
+Photography · Retouching · Visual Direction
+
+This section should be highly visual.
+
+Support:
+
+- gallery
+- full-screen images
+- lightbox
+- captions
+- before/after sliders
+
+Before/after slider must work smoothly on both desktop and mobile.
+
+I have many original portrait photographs and edited versions.
+
+Allow each photo set to contain:
+
+- before image
+- after image
+- title
+- caption
+- photographer credit
+- retouching credit
+- order
+- visibility
+
+Suggested description:
+
+“Portrait photography and retouching focused on natural skin texture, composition, facial balance, and polished editorial presentation.”
+
+Keep real photography visually distinct from AI-assisted campaign imagery.
+
+==================================================
+12. WRITING & DIGITAL PUBLISHING
+==================================================
+
+Create another project category:
+
+Writing & Digital Publishing
+
+Support:
+
+- manuscript cover
+- book mockups
+- screenshots
+- text excerpts
+- EPUB previews
+- cover design
+- Canva work
+
+Positioning:
+
+Long-form Writing
+Cover Design
+EPUB Production
+Digital Publishing
+
+Do not describe the manuscript as commercially published unless I explicitly change that later.
+
+Use:
+
+Independent Writing & Digital Publishing Project
+
+==================================================
+13. PROFILE DRAWER
+==================================================
+
+Clicking PROFILE should open a right-side drawer without losing scroll position.
+
+Desktop:
+approximately 35–40% of screen width
+
+Mobile:
+nearly full-screen drawer
+
+Include:
+
+Profile image
+
+SUJIN LEE
+
+Marketing · Brand · Product
+Atlanta, Georgia
+
+ABOUT
+
+Editable short biography.
+
+EDUCATION
+
+Georgia State University
+J. Mack Robinson College of Business
+
+Bachelor of Business Administration in Marketing
+Expected May 2027
+
+LINKS
+
+LinkedIn ↗
+Instagram ↗
+Email ↗
+Resume ↗
+GitHub ↗ (optional)
+
+Each field must be editable from /admin.
+
+Do not hardcode links.
+
+Email should use mailto:.
+
+Resume should open or download the currently uploaded resume PDF.
+
+I must be able to replace the resume PDF from the admin dashboard without changing code.
+
+==================================================
+14. ADMIN DASHBOARD
+==================================================
+
+Create:
+
+/admin
+
+This must be private.
+
+Use Supabase Auth.
+
+Only authenticated administrator accounts should have access.
+
+Do not expose admin credentials in source code.
+
+Admin UI should be very simple and usable by a non-developer.
+
+Admin dashboard navigation:
+
+Dashboard
+Projects
+Photography
+Profile
+Homepage
+Resume
+Media Library
+Settings
+
+==================================================
+15. ADMIN — HOMEPAGE EDITOR
+==================================================
+
+Allow me to edit:
+
+- hero name
+- hero headline
+- hero description
+- location
+- selected work label
+- footer text
+- social links
+- contact information
+- site metadata
+
+Show a live preview if reasonably possible.
+
+==================================================
+16. ADMIN — PROJECT EDITOR
+==================================================
+
+Allow:
+
+Create New Project
+
+Edit Project
+
+Delete Project
+
+Duplicate Project
+
+Save Draft
+
+Publish
+
+Unpublish
+
+Featured toggle
+
+Hide project
+
+Reorder project
+
+Upload/change cover image
+
+Upload project images
+
+Add/remove content blocks
+
+Drag/drop content blocks
+
+Edit captions
+
+Edit alt text
+
+Edit external links
+
+Edit tags
+
+Edit year
+
+Edit role
+
+Edit status
+
+==================================================
+17. ADMIN — IMAGE MANAGEMENT
+==================================================
+
+Image uploading must be extremely easy.
+
+Support:
+
+- drag and drop
+- click to upload
+- multiple image upload
+- image preview
+- delete
+- replace
+- captions
+- alt text
+
+Use Supabase Storage.
+
+Automatically generate safe unique filenames.
+
+Preserve image quality.
+
+Use optimized frontend image delivery.
+
+Prevent enormous raw files from unnecessarily slowing down the site.
+
+Show upload progress.
+
+Do not require me to manually place images inside code folders.
+
+==================================================
+18. ADMIN — PHOTOGRAPHY
+==================================================
+
+Allow me to create photography sets.
+
+Each set should allow:
+
+Before image
+After image
+Title
+Caption
+Credits
+Order
+Published toggle
+
+Make it extremely easy to add new before/after work later.
+
+==================================================
+19. ADMIN — PROFILE
+==================================================
+
+Allow editing:
+
+Name
+Professional title
+About text
+Location
+Profile image
+
+Education:
+School
+College
+Degree
+Major
+Graduation date
+
+Links:
+LinkedIn
+Instagram
+Email
+GitHub
+Other portfolio links
+
+Allow adding or removing links without editing code.
+
+==================================================
+20. ADMIN — RESUME
+==================================================
+
+Create a simple Resume manager.
+
+Allow:
+
+Upload PDF
+Replace PDF
+Preview PDF
+Delete old PDF
+
+Public PROFILE drawer should always point to the current active resume.
+
+==================================================
+21. MEDIA LIBRARY
+==================================================
+
+Create a basic media library.
+
+Show uploaded:
+
+images
+videos
+PDFs
+
+Allow:
+
+preview
+copy URL
+rename display title
+delete unused media
+
+Warn before deleting media currently used by a project.
+
+==================================================
+22. DRAFT AND PUBLISH SYSTEM
+==================================================
+
+I need to be able to work on changes without immediately publishing them.
+
+Content should support:
+
+Draft
+Published
+Hidden
+
+Only Published content appears publicly.
+
+Admin must be able to preview drafts.
+
+==================================================
+23. ORDERING
+==================================================
+
+Allow drag-and-drop ordering for:
+
+Projects
+Project content blocks
+Photography
+Gallery images
+
+Use a simple order/index field in the database.
+
+==================================================
+24. DATABASE
+==================================================
+
+Design a sensible Supabase schema.
+
+Suggested tables:
+
+site_settings
+profile
+education
+social_links
+projects
+project_blocks
+project_media
+photography_sets
+media
+resume_files
+
+You may improve the schema if necessary.
+
+Provide SQL migrations/schema.
+
+Use UUID primary keys.
+
+Include:
+
+created_at
+updated_at
+
+where appropriate.
+
+==================================================
+25. SECURITY
+==================================================
+
+Security is important.
+
+Use Supabase Row Level Security.
+
+Public users:
+
+- may only read published public portfolio content
+- cannot insert
+- cannot update
+- cannot delete
+
+Authenticated admin:
+
+- can create
+- read
+- update
+- delete portfolio content
+- upload media
+
+Do not put Supabase service-role keys in frontend code.
+
+Use environment variables correctly.
+
+Provide an .env.example file.
+
+==================================================
+26. RESPONSIVE DESIGN
+==================================================
+
+Site must work beautifully on:
+
+Desktop
+Laptop
+Tablet
+iPhone
+Android
+
+Mobile should NOT feel like a compressed desktop layout.
+
+Adjust typography and image layouts appropriately.
+
+==================================================
+27. ANIMATION
+==================================================
+
+Use subtle animations only.
+
+Examples:
+
+- gentle fade-in
+- image reveal
+- smooth drawer transition
+- subtle hover movement
+- smooth scrolling
+
+Respect prefers-reduced-motion.
+
+Do not use distracting scroll effects or excessive parallax.
+
+==================================================
+28. ACCESSIBILITY
+==================================================
+
+Include:
+
+semantic HTML
+keyboard navigation
+focus states
+image alt text
+accessible buttons
+accessible drawer
+sufficient contrast
+ARIA where appropriate
+
+==================================================
+29. SEO
+==================================================
+
+Support editable:
+
+site title
+description
+OG image
+favicon
+social preview image
+
+Use proper metadata.
+
+Project pages should have their own metadata.
+
+==================================================
+30. URL STRUCTURE
+==================================================
+
+Use clean routes such as:
+
+/
+ /work/maison-de-lete
+ /work/the-reader
+ /work/[slug]
+ /admin
+
+Portfolio projects should automatically generate their own slug.
+
+==================================================
+31. FOOTER
+==================================================
+
+Minimal footer:
+
+SUJIN LEE
+
+LinkedIn
+Instagram
+Email
+
+Atlanta, GA
+
+© 2026 Sujin Lee
+
+Designed & developed by Sujin Lee.
+
+Footer fields should be editable from admin.
+
+==================================================
+32. ADMIN DESIGN
+==================================================
+
+Admin does NOT need the editorial visual style of the public site.
+
+Prioritize clarity and ease of use.
+
+It should feel like a simple CMS.
+
+Use clear buttons like:
+
+Add Project
+Upload Image
+Save Draft
+Publish
+Add Section
+Delete
+Preview
+
+Do not make editing require knowledge of Markdown or HTML.
+
+Use rich text or simple form fields.
+
+==================================================
+33. IMPORTANT UX REQUIREMENT
+==================================================
+
+My goal is:
+
+I should be able to come back months later, go to:
+
+mywebsite.com/admin
+
+log in,
+
+click a project,
+
+upload three new images,
+
+change two sentences,
+
+drag an image above another image,
+
+press Publish,
+
+and be finished.
+
+I should NOT need to:
+
+open VS Code
+edit HTML
+change JSON files
+push to GitHub
+redeploy manually
+
+Content updates should appear on the public website automatically after publishing.
+
+==================================================
+34. DEVELOPMENT REQUIREMENTS
+==================================================
+
+Build the actual working application.
+
+Do not only give me mockups or pseudocode.
+
+Generate all necessary files.
+
+Keep components modular.
+
+Use clean folder structure.
+
+Comment complex areas.
+
+Do not overengineer.
+
+Do not install unnecessary dependencies.
+
+Use reusable components for:
+
+Header
+ProfileDrawer
+ProjectPreview
+CaseStudy
+MediaGallery
+BeforeAfterSlider
+Footer
+AdminEditor
+BlockEditor
+MediaUploader
+
+==================================================
+35. SETUP INSTRUCTIONS
+==================================================
+
+After building the project, provide exact beginner-friendly setup instructions for:
+
+1. Creating the Supabase project
+2. Creating database tables
+3. Enabling RLS
+4. Creating storage bucket(s)
+5. Creating the admin account
+6. Adding environment variables
+7. Running locally
+8. Connecting GitHub
+9. Deploying to Vercel
+10. Connecting a custom domain
+11. Logging into /admin
+12. Updating portfolio content later
+
+Assume I am not an experienced developer.
+
+Do not skip steps.
+
+==================================================
+36. SEED CONTENT
+==================================================
+
+Create initial placeholder / seed content for:
+
+MAISON DE L’ÉTÉ
+The Reader.
+Poshmark & eBay
+Portrait Photography
+Writing & Digital Publishing
+
+Do not invent fake metrics, customers, revenue, launches, publications, or achievements.
+
+Use placeholders such as:
+
+[Add sales figure]
+[Upload image]
+[Add Instagram URL]
+
+where real information has not been supplied.
+
+==================================================
+37. FINAL QUALITY STANDARD
+==================================================
+
+The public website should feel suitable for applications in:
+
+Marketing
+Brand Marketing
+Luxury
+Fashion
+Beauty
+Fragrance
+Content Marketing
+Product Marketing
+Creative Strategy
+E-Commerce
+Advertising
+
+It should look intentionally designed rather than generated from a generic portfolio template.
+
+The portfolio itself should demonstrate:
+
+visual judgment
+brand thinking
+content strategy
+product thinking
+web design
+creative direction
+AI-assisted production
+attention to detail
+
+Prioritize sophistication, usability, and visual clarity over flashy effects.
+
+Build the project now.
