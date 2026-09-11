@@ -1,11 +1,10 @@
-"use server";
+"use client";
 
 import { z } from "zod";
-import { adminAction } from "@/lib/auth";
+import { runAdmin } from "@/lib/auth-client";
 import { toResumeFile } from "@/lib/data/mappers";
+import { publishToSite } from "@/lib/deploy";
 import { MEDIA_BUCKET } from "@/lib/media/url";
-import { revalidatePublicSite } from "@/lib/revalidate";
-import { createClient } from "@/lib/supabase/server";
 
 const registerInput = z.object({
   path: z.string().min(1).max(500),
@@ -15,9 +14,8 @@ const registerInput = z.object({
 
 /** Records an uploaded PDF and makes it the active resume. */
 export async function registerResume(input: z.input<typeof registerInput>) {
-  return adminAction(async () => {
+  return runAdmin(async (supabase) => {
     const r = registerInput.parse(input);
-    const supabase = await createClient();
 
     const deactivate = await supabase.from("resume_files").update({ is_active: false }).eq("is_active", true);
     if (deactivate.error) throw new Error(deactivate.error.message);
@@ -29,25 +27,23 @@ export async function registerResume(input: z.input<typeof registerInput>) {
       .single();
     if (error) throw new Error(error.message);
 
-    revalidatePublicSite();
+    await publishToSite(supabase);
     return toResumeFile(data);
   });
 }
 
 export async function setActiveResume(id: string) {
-  return adminAction(async () => {
-    const supabase = await createClient();
+  return runAdmin(async (supabase) => {
     const deactivate = await supabase.from("resume_files").update({ is_active: false }).eq("is_active", true);
     if (deactivate.error) throw new Error(deactivate.error.message);
     const { error } = await supabase.from("resume_files").update({ is_active: true }).eq("id", id);
     if (error) throw new Error(error.message);
-    revalidatePublicSite();
+    return publishToSite(supabase);
   });
 }
 
 export async function deleteResume(id: string) {
-  return adminAction(async () => {
-    const supabase = await createClient();
+  return runAdmin(async (supabase) => {
     const { data, error } = await supabase.from("resume_files").select("*").eq("id", id).single();
     if (error) throw new Error(error.message);
 
@@ -56,6 +52,6 @@ export async function deleteResume(id: string) {
 
     const removed = await supabase.from("resume_files").delete().eq("id", id);
     if (removed.error) throw new Error(removed.error.message);
-    revalidatePublicSite();
+    return publishToSite(supabase);
   });
 }

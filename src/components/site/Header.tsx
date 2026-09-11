@@ -10,14 +10,25 @@ export function Header({ siteName }: { siteName: string }) {
   const pathname = usePathname();
   const { openDrawer, open } = useDrawer();
   const [scrolled, setScrolled] = useState(false);
+  const [overHero, setOverHero] = useState(false);
   const isHome = pathname === "/";
 
+  // Solid background once scrolled; light text while floating over the hero image.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => {
+      const hero = document.getElementById("hero");
+      const heroBottom = hero ? hero.getBoundingClientRect().bottom : 0;
+      setOverHero(Boolean(hero) && heroBottom > 72);
+      setScrolled(window.scrollY > 8 && !(hero && heroBottom > 72));
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [pathname]);
 
   // On the homepage the name scrolls to the top and WORK scrolls to the grid.
   // Elsewhere they are normal links back to the homepage.
@@ -34,8 +45,9 @@ export function Header({ siteName }: { siteName: string }) {
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-40 transition-[background-color,border-color,backdrop-filter] duration-500",
+        "fixed inset-x-0 top-0 z-40 transition-[background-color,border-color,color] duration-500",
         scrolled ? "border-b border-line bg-bg/85 backdrop-blur-md" : "border-b border-transparent bg-transparent",
+        overHero ? "[&_.link-line]:text-[#f5f2ec]" : "[&_.link-line]:text-fg",
       )}
     >
       <nav className="mx-auto flex h-16 max-w-[88rem] items-center justify-between px-6 md:px-10" aria-label="Main">

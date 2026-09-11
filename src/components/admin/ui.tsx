@@ -179,3 +179,19 @@ export function EmptyState({ title, description, action }: { title: ReactNode; d
     </div>
   );
 }
+
+export function LoadingState({ label = "Loading…" }: { label?: string }) {
+  return (
+    <div className="flex items-center gap-2 py-16 text-sm text-neutral-500" role="status">
+      <Spinner /> {label}
+    </div>
+  );
+}
+
+export function ErrorState({ message }: { message?: string | null }) {
+  return (
+    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+      {message || "Something went wrong while loading."}
+    </div>
+  );
+}

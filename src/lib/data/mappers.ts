@@ -33,6 +33,7 @@ export function toSiteSettings(row: SiteSettingsRow | null): SiteSettings {
     heroDescription: row?.hero_description ?? "",
     heroLocation: row?.hero_location ?? "",
     heroCtaLabel: row?.hero_cta_label ?? "Selected Work",
+    heroTicker: row?.hero_ticker ?? "",
     selectedWorkLabel: row?.selected_work_label ?? "Selected Work",
     photographyLabel: row?.photography_label ?? "Portrait",
     photographySubtitle: row?.photography_subtitle ?? "",
@@ -45,6 +46,7 @@ export function toSiteSettings(row: SiteSettingsRow | null): SiteSettings {
     seoDescription: row?.seo_description ?? "",
     ogImage: parseMediaRef(row?.og_image),
     favicon: parseMediaRef(row?.favicon),
+    heroImage: parseMediaRef(row?.hero_image),
   };
 }
 
@@ -158,6 +160,7 @@ export function toMediaItem(row: MediaRow): MediaItem {
     sizeBytes: Number(row.size_bytes),
     width: row.width,
     height: row.height,
+    sizes: row.sizes ?? [],
     title: row.title,
     altText: row.alt_text,
     originalFilename: row.original_filename,
@@ -173,5 +176,6 @@ export function mediaItemToRef(item: MediaItem): MediaRef {
     width: item.width,
     height: item.height,
     alt: item.altText,
+    sizes: item.sizes,
   };
 }

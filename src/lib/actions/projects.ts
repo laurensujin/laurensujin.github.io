@@ -1,13 +1,10 @@
-"use server";
+"use client";
 
-import { adminAction } from "@/lib/auth";
+import { runAdmin, type Supabase } from "@/lib/auth-client";
 import { PROJECT_STATUSES, projectContentSchema, type ContentStatus, type ProjectContent } from "@/lib/content/schema";
-import { revalidatePublicSite } from "@/lib/revalidate";
-import { createClient } from "@/lib/supabase/server";
+import { publishToSite } from "@/lib/deploy";
 import type { Json } from "@/lib/supabase/database.types";
 import { newId, slugify } from "@/lib/utils";
-
-type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 /** Finds a slug that no other project uses, adding -2, -3, ... when needed. */
 async function uniqueSlug(supabase: Supabase, base: string, excludeId?: string): Promise<string> {
@@ -31,20 +28,14 @@ async function nextSortOrder(supabase: Supabase): Promise<number> {
 
 /** Creates an empty draft project and returns its id. */
 export async function createProject() {
-  return adminAction(async () => {
-    const supabase = await createClient();
+  return runAdmin(async (supabase) => {
     const title = "Untitled project";
     const slug = await uniqueSlug(supabase, title);
     const content: ProjectContent = projectContentSchema.parse({ title, slug });
 
     const { data, error } = await supabase
       .from("projects")
-      .insert({
-        slug,
-        status: "draft",
-        sort_order: await nextSortOrder(supabase),
-        content: content as unknown as Json,
-      })
+      .insert({ slug, status: "draft", sort_order: await nextSortOrder(supabase), content: content as unknown as Json })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -58,9 +49,8 @@ export async function createProject() {
 
 /** Saves work in progress. Nothing changes on the public site. */
 export async function saveProjectDraft(id: string, input: unknown) {
-  return adminAction(async () => {
+  return runAdmin(async (supabase) => {
     const content = projectContentSchema.parse(input);
-    const supabase = await createClient();
     const { data, error } = await supabase
       .from("project_drafts")
       .upsert({ project_id: id, content: content as unknown as Json }, { onConflict: "project_id" })
@@ -71,19 +61,16 @@ export async function saveProjectDraft(id: string, input: unknown) {
   });
 }
 
-/** Saves the draft, then copies it to the live site. */
+/** Saves the draft, then copies it to the live site and asks for a rebuild. */
 export async function publishProject(id: string, input: unknown) {
-  return adminAction(async () => {
+  return runAdmin(async (supabase) => {
     const content = projectContentSchema.parse(input);
     if (!content.title.trim()) throw new Error("Give the project a title before publishing.");
 
-    const supabase = await createClient();
     const slug = await uniqueSlug(supabase, content.slug || content.title, id);
     content.slug = slug;
 
-    const draft = await supabase
-      .from("project_drafts")
-      .upsert({ project_id: id, content: content as unknown as Json }, { onConflict: "project_id" });
+    const draft = await supabase.from("project_drafts").upsert({ project_id: id, content: content as unknown as Json }, { onConflict: "project_id" });
     if (draft.error) throw new Error(draft.error.message);
 
     const publishedAt = new Date().toISOString();
@@ -93,16 +80,15 @@ export async function publishProject(id: string, input: unknown) {
       .eq("id", id);
     if (error) throw new Error(error.message);
 
-    revalidatePublicSite();
-    return { slug, publishedAt, content };
+    const rebuild = await publishToSite(supabase);
+    return { slug, publishedAt, content, rebuild };
   });
 }
 
 /** Changes visibility without touching content: draft, published or hidden. */
 export async function setProjectStatus(id: string, status: ContentStatus) {
-  return adminAction(async () => {
+  return runAdmin(async (supabase) => {
     if (!PROJECT_STATUSES.includes(status)) throw new Error("Unknown status.");
-    const supabase = await createClient();
 
     if (status === "published") {
       // Re-publishing a hidden project keeps its last published content.
@@ -115,37 +101,30 @@ export async function setProjectStatus(id: string, status: ContentStatus) {
 
     const { error } = await supabase.from("projects").update({ status }).eq("id", id);
     if (error) throw new Error(error.message);
-    revalidatePublicSite();
+    return publishToSite(supabase);
   });
 }
 
 export async function setProjectFeatured(id: string, featured: boolean) {
-  return adminAction(async () => {
-    const supabase = await createClient();
+  return runAdmin(async (supabase) => {
     const { error } = await supabase.from("projects").update({ is_featured: featured }).eq("id", id);
     if (error) throw new Error(error.message);
-    revalidatePublicSite();
+    return publishToSite(supabase);
   });
 }
 
 /** `ids` is the complete list of project ids in the new order. */
 export async function reorderProjects(ids: string[]) {
-  return adminAction(async () => {
-    const supabase = await createClient();
+  return runAdmin(async (supabase) => {
     const { error } = await supabase.rpc("reorder_projects", { ids });
     if (error) throw new Error(error.message);
-    revalidatePublicSite();
+    return publishToSite(supabase);
   });
 }
 
 export async function duplicateProject(id: string) {
-  return adminAction(async () => {
-    const supabase = await createClient();
-    const { data: source, error } = await supabase
-      .from("projects")
-      .select("content, project_drafts(content)")
-      .eq("id", id)
-      .single();
+  return runAdmin(async (supabase) => {
+    const { data: source, error } = await supabase.from("projects").select("content, project_drafts(content)").eq("id", id).single();
     if (error) throw new Error(error.message);
 
     const joined = source.project_drafts as { content: Json } | { content: Json }[] | null;
@@ -157,19 +136,12 @@ export async function duplicateProject(id: string) {
 
     const inserted = await supabase
       .from("projects")
-      .insert({
-        slug,
-        status: "draft",
-        sort_order: await nextSortOrder(supabase),
-        content: content as unknown as Json,
-      })
+      .insert({ slug, status: "draft", sort_order: await nextSortOrder(supabase), content: content as unknown as Json })
       .select("id")
       .single();
     if (inserted.error) throw new Error(inserted.error.message);
 
-    const draft = await supabase
-      .from("project_drafts")
-      .insert({ project_id: inserted.data.id, content: content as unknown as Json });
+    const draft = await supabase.from("project_drafts").insert({ project_id: inserted.data.id, content: content as unknown as Json });
     if (draft.error) throw new Error(draft.error.message);
 
     return { id: inserted.data.id };
@@ -177,18 +149,16 @@ export async function duplicateProject(id: string) {
 }
 
 export async function deleteProject(id: string) {
-  return adminAction(async () => {
-    const supabase = await createClient();
+  return runAdmin(async (supabase) => {
     const { error } = await supabase.from("projects").delete().eq("id", id);
     if (error) throw new Error(error.message);
-    revalidatePublicSite();
+    return publishToSite(supabase);
   });
 }
 
 /** Throws away unpublished edits and restores the draft from the live version. */
 export async function discardProjectDraft(id: string) {
-  return adminAction(async () => {
-    const supabase = await createClient();
+  return runAdmin(async (supabase) => {
     const { data, error } = await supabase.from("projects").select("content").eq("id", id).single();
     if (error) throw new Error(error.message);
     const content = projectContentSchema.parse(data.content);

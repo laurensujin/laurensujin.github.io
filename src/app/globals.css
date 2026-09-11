@@ -85,37 +85,46 @@ video {
   max-width: 100%;
 }
 
-/* Small uppercase label used across the site. */
-.eyebrow {
-  font-family: var(--font-sans);
-  font-size: 0.6875rem;
-  line-height: 1.4;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
+/* Reusable text styles live in the components layer so Tailwind utilities
+   (e.g. text-fg on a light-on-image header) can still override their colour. */
+@layer components {
+  /* Small uppercase label used across the site. */
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+  }
+
+  /* Underline that draws in on hover. */
+  .link-line {
+    position: relative;
+    text-decoration: none;
+  }
+  .link-line::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.2em;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.5s var(--ease-editorial);
+  }
+  .link-line:hover::after,
+  .link-line:focus-visible::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
 }
 
-/* Underline that draws in on hover. */
-.link-line {
-  position: relative;
-  text-decoration: none;
-}
-.link-line::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -0.2em;
-  height: 1px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 0.5s var(--ease-editorial);
-}
-.link-line:hover::after,
-.link-line:focus-visible::after {
-  transform: scaleX(1);
-  transform-origin: left;
+/* Headline over the hero image: a whisper of shadow for busy photographs. */
+.hero-headline {
+  text-shadow: 0 1px 30px rgba(0, 0, 0, 0.25);
 }
 
 /* ------------------------------------------------------------------------
@@ -196,4 +205,71 @@ video {
   color-scheme: light;
   color: #171717;
   background: #f5f5f4;
+}
+
+/* ------------------------------------------------------------------------
+   Landing section: staggered headline reveal, image settle, discipline ticker
+   ------------------------------------------------------------------------ */
+.hero-line {
+  overflow: hidden;
+  padding-bottom: 0.06em; /* room for descenders inside the clip */
+  margin-bottom: -0.06em;
+}
+.hero-line > span {
+  display: block;
+}
+
+@keyframes hero-rise {
+  from {
+    transform: translateY(105%);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes hero-settle {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-line > span {
+    animation: hero-rise 1.1s var(--ease-editorial) both;
+    animation-delay: calc(120ms + var(--i, 0) * 110ms);
+  }
+  .hero-visual {
+    animation: hero-settle 1.6s var(--ease-editorial) both;
+    animation-delay: 200ms;
+  }
+  .ticker-track {
+    animation: ticker-scroll 48s linear infinite;
+  }
+  .ticker:hover .ticker-track {
+    animation-play-state: paused;
+  }
+}
+
+.ticker {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ticker-track {
+  display: flex;
+  width: max-content;
 }

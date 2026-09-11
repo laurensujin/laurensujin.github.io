@@ -5,6 +5,7 @@ import { saveSiteSettings } from "@/lib/actions/settings";
 import type { SiteSettings, SocialLink } from "@/lib/data/types";
 import { Footer } from "@/components/site/Footer";
 import { Hero } from "@/components/site/Hero";
+import { MediaField } from "./MediaField";
 import { useToast } from "./Toast";
 import { Button, Card, Field, Input, PageHeader, Textarea } from "./ui";
 
@@ -13,7 +14,7 @@ interface Props {
   links: SocialLink[];
 }
 
-/** Homepage copy with a live preview of the hero and footer on the right. */
+/** Homepage copy and hero image, with a live preview of the landing section and footer. */
 export function HomepageForm({ settings: initial, links }: Props) {
   const toast = useToast();
   const [s, setS] = useState(initial);
@@ -28,6 +29,8 @@ export function HomepageForm({ settings: initial, links }: Props) {
       heroDescription: s.heroDescription,
       heroLocation: s.heroLocation,
       heroCtaLabel: s.heroCtaLabel,
+      heroTicker: s.heroTicker,
+      heroImage: s.heroImage,
       selectedWorkLabel: s.selectedWorkLabel,
       photographyLabel: s.photographyLabel,
       photographySubtitle: s.photographySubtitle,
@@ -39,14 +42,14 @@ export function HomepageForm({ settings: initial, links }: Props) {
     });
     setBusy(false);
     if (!result.ok) return toast(result.error, "error");
-    toast("Homepage saved and published");
+    toast(result.data.message);
   };
 
   return (
     <>
       <PageHeader
         title="Homepage"
-        description="Changes go live as soon as you save."
+        description="Saving publishes these changes with the next site rebuild."
         actions={
           <Button variant="primary" onClick={save} loading={busy} data-testid="save-homepage">
             Save
@@ -55,7 +58,7 @@ export function HomepageForm({ settings: initial, links }: Props) {
       />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:items-start">
         <div className="flex flex-col gap-6">
-          <Card title="Hero">
+          <Card title="Landing section">
             <div className="flex flex-col gap-4">
               <Field label="Name (header, hero and footer)" htmlFor="siteName">
                 <Input id="siteName" value={s.siteName} onChange={(e) => set({ siteName: e.target.value })} />
@@ -63,11 +66,20 @@ export function HomepageForm({ settings: initial, links }: Props) {
               <Field label="Headline" htmlFor="heroHeadline" hint="Each line break starts a new line in the big serif headline.">
                 <Textarea id="heroHeadline" rows={4} value={s.heroHeadline} onChange={(e) => set({ heroHeadline: e.target.value })} />
               </Field>
+              <MediaField
+                label="Hero image"
+                value={s.heroImage}
+                onChange={(heroImage) => set({ heroImage })}
+                hint="Portrait orientation (4:5) works best. Leave empty to use the first featured project's cover, or the generated placeholder."
+              />
               <Field label="Location line" htmlFor="heroLocation">
                 <Input id="heroLocation" value={s.heroLocation} onChange={(e) => set({ heroLocation: e.target.value })} />
               </Field>
               <Field label="Supporting text" htmlFor="heroDescription">
                 <Textarea id="heroDescription" rows={3} value={s.heroDescription} onChange={(e) => set({ heroDescription: e.target.value })} />
+              </Field>
+              <Field label="Moving line of disciplines" htmlFor="heroTicker" hint="Separate items with · or commas. Leave empty to hide the line.">
+                <Input id="heroTicker" value={s.heroTicker} onChange={(e) => set({ heroTicker: e.target.value })} />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Scroll link label" htmlFor="heroCtaLabel">
@@ -117,8 +129,8 @@ export function HomepageForm({ settings: initial, links }: Props) {
         <div className="xl:sticky xl:top-20">
           <p className="mb-2 text-[13px] font-medium text-neutral-700">Live preview</p>
           <div className="overflow-hidden rounded-lg border border-neutral-200 bg-bg text-fg" style={{ colorScheme: "light" }}>
-            <div className="origin-top-left" style={{ zoom: 0.6 }}>
-              <Hero settings={s} preview />
+            <div className="origin-top-left" style={{ zoom: 0.55 }}>
+              <Hero settings={s} visual={s.heroImage} preview />
               <Footer settings={s} links={links} />
             </div>
           </div>

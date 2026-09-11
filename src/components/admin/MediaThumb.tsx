@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { MediaRef } from "@/lib/content/schema";
-import { refUrl } from "@/lib/media/url";
+import { imageSrc, refUrl } from "@/lib/media/url";
 import { cn } from "@/lib/utils";
 import { IconFile, IconVideo } from "./icons";
 
@@ -12,7 +12,7 @@ export function MediaThumb({ media, className, sizes = "200px" }: { media: Media
   return (
     <div className={cn("relative flex items-center justify-center overflow-hidden bg-neutral-100 text-neutral-400", className)}>
       {!media || !url ? null : media.kind === "image" ? (
-        <Image src={url} alt={media.alt || ""} fill sizes={sizes} className="object-cover" />
+        <Image src={imageSrc(media) ?? url} alt={media.alt || ""} fill sizes={sizes} className="object-cover" />
       ) : media.kind === "video" ? (
         <>
           <video src={url} muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />

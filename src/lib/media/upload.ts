@@ -3,10 +3,10 @@
 /**
  * Browser-side upload pipeline:
  *   1. check the file type and size
- *   2. for big images, downscale on a canvas so the site never stores a
- *      50 MB raw photo it will only ever show at 3000 px
- *   3. upload straight to Supabase Storage with a progress callback
- *   4. record the file in the media library (server action)
+ *   2. for photos, downscale anything over 3000 px and create resized copies
+ *      (480 / 960 / 1600 / 2400 px wide) so pages can load the right size
+ *   3. upload everything straight to Supabase Storage with a progress callback
+ *   4. record the file in the media library
  */
 import { registerMedia } from "@/lib/actions/media";
 import { registerResume } from "@/lib/actions/resume";
@@ -15,9 +15,9 @@ import type { MediaItem } from "@/lib/data/types";
 import { createClient } from "@/lib/supabase/browser";
 import { supabaseEnv } from "@/lib/supabase/env";
 import { newId } from "@/lib/utils";
-import { MEDIA_BUCKET } from "./url";
+import { MEDIA_BUCKET, RENDITION_WIDTHS, renditionPath } from "./url";
 
-/** Longest edge kept for uploaded images. Plenty for full-width retina screens. */
+/** Longest edge kept for the original upload. Plenty for full-width retina screens. */
 export const MAX_IMAGE_EDGE = 3000;
 /** Supabase's per-file limit on the free plan. */
 export const MAX_FILE_BYTES = 50 * 1024 * 1024;
@@ -75,7 +75,15 @@ interface Prepared {
   height: number | null;
 }
 
-async function decode(file: File): Promise<ImageBitmap | HTMLImageElement> {
+interface Rendition {
+  width: number;
+  blob: Blob;
+  mimeType: string;
+}
+
+type Decoded = ImageBitmap | HTMLImageElement;
+
+async function decode(file: File): Promise<Decoded> {
   try {
     return await createImageBitmap(file, { imageOrientation: "from-image" });
   } catch {
@@ -88,37 +96,53 @@ async function decode(file: File): Promise<ImageBitmap | HTMLImageElement> {
   }
 }
 
-/** Measures an image and downscales it if it is larger than MAX_IMAGE_EDGE. */
-export async function prepareImage(file: File): Promise<Prepared> {
+function dimensions(source: Decoded) {
+  return "naturalWidth" in source ? { width: source.naturalWidth, height: source.naturalHeight } : { width: source.width, height: source.height };
+}
+
+async function encode(source: Decoded, width: number, height: number, mimeType: string, quality: number): Promise<Blob | null> {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(source, 0, 0, width, height);
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, mimeType, quality));
+}
+
+/** Measures an image, caps it at MAX_IMAGE_EDGE and builds the resized copies. */
+export async function prepareImage(file: File): Promise<{ original: Prepared; renditions: Rendition[] }> {
   if (file.type === "image/svg+xml" || file.type === "image/gif") {
-    return { blob: file, mimeType: file.type, width: null, height: null };
+    return { original: { blob: file, mimeType: file.type, width: null, height: null }, renditions: [] };
   }
 
   const source = await decode(file);
-  const width = "naturalWidth" in source ? source.naturalWidth : source.width;
-  const height = "naturalHeight" in source ? source.naturalHeight : source.height;
+  const { width, height } = dimensions(source);
   const longest = Math.max(width, height);
+  // PNG keeps PNG (transparency); everything else becomes JPEG when re-encoded.
+  const outType = file.type === "image/png" ? "image/png" : "image/jpeg";
 
-  if (longest <= MAX_IMAGE_EDGE) {
-    return { blob: file, mimeType: file.type, width, height };
+  let original: Prepared = { blob: file, mimeType: file.type, width, height };
+  if (longest > MAX_IMAGE_EDGE) {
+    const scale = MAX_IMAGE_EDGE / longest;
+    const w = Math.round(width * scale);
+    const h = Math.round(height * scale);
+    const blob = await encode(source, w, h, outType, 0.92);
+    if (blob) original = { blob, mimeType: outType, width: w, height: h };
   }
 
-  const scale = MAX_IMAGE_EDGE / longest;
-  const targetWidth = Math.round(width * scale);
-  const targetHeight = Math.round(height * scale);
-  const canvas = document.createElement("canvas");
-  canvas.width = targetWidth;
-  canvas.height = targetHeight;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return { blob: file, mimeType: file.type, width, height };
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(source, 0, 0, targetWidth, targetHeight);
+  const renditions: Rendition[] = [];
+  const baseW = original.width ?? width;
+  const baseH = original.height ?? height;
+  for (const w of RENDITION_WIDTHS) {
+    if (w >= baseW) continue;
+    const h = Math.round((baseH * w) / baseW);
+    const blob = await encode(source, w, h, outType, 0.85);
+    if (blob) renditions.push({ width: w, blob, mimeType: outType });
+  }
 
-  // PNG stays PNG (keeps transparency); photos become high-quality JPEG.
-  const outType = file.type === "image/png" ? "image/png" : "image/jpeg";
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, outType, 0.92));
-  if (!blob) return { blob: file, mimeType: file.type, width, height };
-  return { blob, mimeType: outType, width: targetWidth, height: targetHeight };
+  return { original, renditions };
 }
 
 async function videoDimensions(file: File): Promise<{ width: number | null; height: number | null }> {
@@ -185,20 +209,36 @@ export async function uploadMediaFile(file: File, onProgress?: (percent: number)
   if (!kind) throw new Error(`"${file.name}" is not a supported type. Use JPG, PNG, WebP, GIF, SVG, MP4, WebM or PDF.`);
   if (file.size > MAX_FILE_BYTES) throw new Error(`"${file.name}" is larger than 50 MB.`);
 
-  let prepared: Prepared = { blob: file, mimeType: file.type, width: null, height: null };
-  if (kind === "image") prepared = await prepareImage(file);
-  if (kind === "video") prepared = { ...prepared, ...(await videoDimensions(file)) };
+  let original: Prepared = { blob: file, mimeType: file.type, width: null, height: null };
+  let renditions: Rendition[] = [];
+  if (kind === "image") ({ original, renditions } = await prepareImage(file));
+  if (kind === "video") original = { ...original, ...(await videoDimensions(file)) };
 
-  const path = storagePath(kind, prepared.mimeType);
-  await uploadToStorage(prepared.blob, path, prepared.mimeType, onProgress);
+  const path = storagePath(kind, original.mimeType);
+  const uploads: { blob: Blob; path: string; mimeType: string }[] = [
+    { blob: original.blob, path, mimeType: original.mimeType },
+    ...renditions.map((r) => ({ blob: r.blob, path: renditionPath(path, r.width), mimeType: r.mimeType })),
+  ];
+
+  // One progress bar across all copies, weighted by file size.
+  const total = uploads.reduce((sum, u) => sum + u.blob.size, 0) || 1;
+  let done = 0;
+  for (const upload of uploads) {
+    await uploadToStorage(upload.blob, upload.path, upload.mimeType, (pct) => {
+      onProgress?.(Math.min(99, Math.round(((done + (upload.blob.size * pct) / 100) / total) * 100)));
+    });
+    done += upload.blob.size;
+  }
+  onProgress?.(100);
 
   const result = await registerMedia({
     path,
     kind,
-    mimeType: prepared.mimeType,
-    sizeBytes: prepared.blob.size,
-    width: prepared.width,
-    height: prepared.height,
+    mimeType: original.mimeType,
+    sizeBytes: original.blob.size,
+    width: original.width,
+    height: original.height,
+    sizes: renditions.map((r) => r.width),
     title: titleFromFilename(file.name),
     altText: "",
     originalFilename: file.name,

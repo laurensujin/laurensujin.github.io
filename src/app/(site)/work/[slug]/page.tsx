@@ -4,8 +4,9 @@ import { CaseStudy } from "@/components/site/CaseStudy";
 import { getAdjacentProjects, getPublishedProject, getPublishedProjects } from "@/lib/data/public";
 import { refUrl } from "@/lib/media/url";
 
-// New projects published later are rendered on first visit, then cached.
-export const dynamicParams = true;
+// Every published project becomes a static page at build time; projects
+// published later appear after the next rebuild (see .github/workflows/deploy.yml).
+export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const projects = await getPublishedProjects();

@@ -13,6 +13,7 @@ product thinking
   hero_description = 'I develop ideas from concept to execution across branding, digital products, e-commerce, photography, and content.',
   hero_location = 'Based in Atlanta, Georgia.',
   hero_cta_label = 'Selected Work',
+  hero_ticker = 'Marketing · Brand Development · Product · E-Commerce · Visual Content · Creative Direction',
   selected_work_label = 'Selected Work',
   photography_label = 'Portrait',
   photography_subtitle = 'Photography · Retouching · Visual Direction',

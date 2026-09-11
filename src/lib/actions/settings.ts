@@ -1,10 +1,9 @@
-"use server";
+"use client";
 
 import { z } from "zod";
-import { adminAction } from "@/lib/auth";
+import { runAdmin } from "@/lib/auth-client";
 import { mediaRefSchema } from "@/lib/content/schema";
-import { revalidatePublicSite } from "@/lib/revalidate";
-import { createClient } from "@/lib/supabase/server";
+import { publishToSite, triggerRebuild } from "@/lib/deploy";
 import type { Database } from "@/lib/supabase/database.types";
 
 type SiteSettingsUpdate = Database["public"]["Tables"]["site_settings"]["Update"];
@@ -17,6 +16,7 @@ const siteSettingsInput = z.object({
   heroDescription: text,
   heroLocation: text,
   heroCtaLabel: text,
+  heroTicker: text,
   selectedWorkLabel: text,
   photographyLabel: text,
   photographySubtitle: text,
@@ -29,6 +29,7 @@ const siteSettingsInput = z.object({
   seoDescription: text,
   ogImage: mediaRefSchema.nullable().catch(null),
   favicon: mediaRefSchema.nullable().catch(null),
+  heroImage: mediaRefSchema.nullable().catch(null),
 });
 
 export type SiteSettingsInput = z.input<typeof siteSettingsInput>;
@@ -40,6 +41,7 @@ const COLUMNS: Record<keyof SiteSettingsInput, string> = {
   heroDescription: "hero_description",
   heroLocation: "hero_location",
   heroCtaLabel: "hero_cta_label",
+  heroTicker: "hero_ticker",
   selectedWorkLabel: "selected_work_label",
   photographyLabel: "photography_label",
   photographySubtitle: "photography_subtitle",
@@ -52,29 +54,43 @@ const COLUMNS: Record<keyof SiteSettingsInput, string> = {
   seoDescription: "seo_description",
   ogImage: "og_image",
   favicon: "favicon",
+  heroImage: "hero_image",
 };
 
 /** Saves any subset of the site settings (the Homepage and Settings pages each edit part of the row). */
 export async function saveSiteSettings(input: Partial<SiteSettingsInput>) {
-  return adminAction(async () => {
+  return runAdmin(async (supabase) => {
     const s = siteSettingsInput.partial().parse(input);
     const update: SiteSettingsUpdate = {};
     for (const [key, value] of Object.entries(s)) {
       if (value === undefined) continue;
       (update as Record<string, unknown>)[COLUMNS[key as keyof SiteSettingsInput]] = value;
     }
-    if (!Object.keys(update).length) return;
+    if (!Object.keys(update).length) return { triggered: false, message: "Nothing to save." };
 
-    const supabase = await createClient();
     const { error } = await supabase.from("site_settings").update(update).eq("id", 1);
     if (error) throw new Error(error.message);
-    revalidatePublicSite();
+    return publishToSite(supabase);
   });
 }
 
-/** Manual "refresh the public site" button in Settings. */
-export async function refreshPublicSite() {
-  return adminAction(async () => {
-    revalidatePublicSite();
+const adminSettingsInput = z.object({
+  githubRepo: z.string().max(200).catch(""),
+  githubToken: z.string().max(500).catch(""),
+});
+
+/** Private deployment settings: which GitHub repository to rebuild, and the token to do it. */
+export async function saveAdminSettings(input: z.input<typeof adminSettingsInput>) {
+  return runAdmin(async (supabase) => {
+    const s = adminSettingsInput.parse(input);
+    const { error } = await supabase
+      .from("admin_settings")
+      .upsert({ id: 1, github_repo: s.githubRepo.trim(), github_token: s.githubToken.trim() }, { onConflict: "id" });
+    if (error) throw new Error(error.message);
   });
+}
+
+/** Manual "rebuild the public site" button in Settings. */
+export async function rebuildPublicSite() {
+  return runAdmin(async (supabase) => triggerRebuild(supabase));
 }

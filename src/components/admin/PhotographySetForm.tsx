@@ -35,9 +35,8 @@ export function PhotographySetForm({ set }: Props) {
     const result = await savePhotographySet({ id: set?.id, title, caption, before, after, photographerCredit, retouchingCredit, status });
     setBusy(false);
     if (!result.ok) return toast(result.error, "error");
-    toast(status === "published" ? "Saved and published" : "Saved");
-    if (!set) router.push("/admin/photography");
-    else router.refresh();
+    toast(status === "published" ? result.data.rebuild.message : "Saved");
+    if (!set) router.push("/admin/photography/");
   };
 
   const remove = async () => {
@@ -47,7 +46,7 @@ export function PhotographySetForm({ set }: Props) {
     setBusy(false);
     if (!result.ok) return toast(result.error, "error");
     toast("Photo set deleted");
-    router.push("/admin/photography");
+    router.push("/admin/photography/");
   };
 
   return (

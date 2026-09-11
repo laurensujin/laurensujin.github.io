@@ -2,9 +2,9 @@
 
 An editorial portfolio website with a private admin area at `/admin`. Every word, image, project and photo set on the public site is edited in the admin and stored in Supabase. Nothing needs to be changed in code to update the portfolio.
 
-- **Public site:** Next.js (App Router) + Tailwind CSS. Serif/sans editorial design, light and dark mode, responsive.
-- **Content:** Supabase Postgres (with Row Level Security), Supabase Storage for images, videos and PDFs, Supabase Auth for the admin login.
-- **Hosting:** Vercel.
+- **Public site:** Next.js (App Router) + Tailwind CSS, exported as static files. Serif/sans editorial design, light and dark mode, responsive.
+- **Content:** Supabase Postgres (with Row Level Security), Supabase Storage for images, videos and PDFs, Supabase Auth for the admin login. The admin runs entirely in the browser and talks to Supabase directly.
+- **Hosting:** GitHub Pages, built and published by the GitHub Actions workflow in `.github/workflows/deploy.yml`.
 
 ---
 
@@ -13,8 +13,8 @@ An editorial portfolio website with a private admin area at `/admin`. Every word
 ```
 src/
   app/
-    (site)/            Public pages: homepage, /work/[slug], draft preview
-    admin/             Admin area (login, dashboard, editors)
+    (site)/            Public pages: homepage, /work/[slug], draft preview (/admin/preview/?id=…)
+    admin/             Admin area (login, dashboard, editors), rendered in the browser
     auth/callback/     Handles password-reset links from Supabase emails
     layout.tsx         Fonts, colour theme, site metadata
   components/
@@ -25,10 +25,12 @@ src/
   lib/
     content/           The project content model (schema.ts) and block list (blocks.ts)
     data/              Read functions: public.ts (visitors) and admin.ts (signed in)
-    actions/           Server actions that write to Supabase (projects, media, ...)
-    media/             Upload pipeline (upload.ts) and storage URL helper
-    supabase/          Supabase clients (server, browser, public) and generated types
-  proxy.ts             Sends people who are not signed in away from /admin
+    actions/           Functions that write to Supabase from the admin (projects, media, ...)
+    auth-client.ts     Sign-in state and the admin guard used by every admin page
+    deploy.ts          Tells GitHub to rebuild the site after publishing
+    media/             Upload pipeline with resized copies (upload.ts) and the image loader
+    supabase/          Supabase clients (browser, public) and generated types
+.github/workflows/     deploy.yml: builds the static site and publishes it to GitHub Pages
 supabase/
   migrations/          The database schema (tables, security rules, storage bucket)
   seed.sql             Starter content (generated from scripts/generate-seed.mjs)
@@ -36,15 +38,17 @@ e2e/                   Playwright end-to-end tests
 scripts/               create-admin.mjs, generate-seed.mjs
 ```
 
-**How content flows.** Each project has two copies of its content: a **draft** (what you edit) and a **live** version (what visitors see). *Save draft* keeps your work private, *Preview draft* shows it as a real page, *Publish* copies the draft to the live site. Photo sets, the profile, the homepage copy and the settings go live as soon as you save them.
+**How content flows.** Each project has two copies of its content: a **draft** (what you edit) and a **live** version (what visitors see). *Save draft* keeps your work private, *Preview draft* shows it as a real page, *Publish* copies the draft to the live version. Photo sets, the profile, the homepage copy and the settings become "live" as soon as you save them.
 
-**Security.** Visitors use the public "anon" key, and the database's Row Level Security rules only let it read published content. Only accounts listed in the `admins` table can create, edit, delete or upload anything. The `service_role` key is never used by the app.
+**How the public site updates.** The public pages are static files built from the live content. Whenever you publish or save something public, the admin records a "content changed" timestamp and, if you have added a GitHub token under Settings, asks GitHub to rebuild immediately (about three minutes). Without a token, a scheduled job checks every 15 minutes and rebuilds only when something changed. Either way you never touch code or git.
+
+**Security.** Visitors use the public "anon" key, and the database's Row Level Security rules only let it read published content. Only accounts listed in the `admins` table can create, edit, delete or upload anything; the admin pages are just a convenient interface on top of those rules. The `service_role` key is never used by the app.
 
 ---
 
 ## Setup, step by step
 
-You need a free account at [supabase.com](https://supabase.com), [github.com](https://github.com) and [vercel.com](https://vercel.com), plus [Node.js](https://nodejs.org) (version 20 or newer) installed on your computer.
+You need a free account at [supabase.com](https://supabase.com) and [github.com](https://github.com), plus [Node.js](https://nodejs.org) (version 20 or newer) installed on your computer if you want to run the site locally.
 
 ### 1. Create the Supabase project
 
@@ -93,6 +97,8 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 Never paste the `service_role` key anywhere in this project.
 
+The same two Supabase values are added to GitHub in step 8 so the workflow can build the site.
+
 ### 7. Run locally
 
 ```bash
@@ -102,9 +108,19 @@ npm run dev
 
 Open <http://localhost:3000> for the site and <http://localhost:3000/admin> for the admin. Sign in with the account from step 5.
 
-### 8. Connect GitHub
+### 8. Connect GitHub and turn on GitHub Pages
 
-The project is already connected to the private repository `laurensujin/laurensujin.github.io` on GitHub. To send new code changes there (content changes never need this):
+The code is already in the repository `laurensujin/laurensujin.github.io`. Because the repository name ends in `.github.io`, GitHub serves the site at **https://laurensujin.github.io**. Three settings in the repository make it work:
+
+1. **Make the repository public** (Settings → General → Danger Zone → Change visibility). GitHub Pages on a free account requires a public repository. Before doing this, delete or move any personal files such as `Resume.txt` (it contains a phone number) and remember they also live in the git history.
+2. **Add the Supabase keys as secrets**: Settings → Secrets and variables → Actions → New repository secret. Create `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` with the values from step 6.
+3. **Enable Pages with GitHub Actions**: Settings → Pages → Build and deployment → Source: **GitHub Actions**.
+
+Then open the **Actions** tab, choose "Deploy to GitHub Pages" and press **Run workflow** (later runs happen automatically). After about three minutes the site is live.
+
+Finally, in Supabase go to **Authentication → URL Configuration**: set **Site URL** to `https://laurensujin.github.io` and add `https://laurensujin.github.io/**` to **Redirect URLs**, so password-reset emails link to the right place.
+
+To send code changes to GitHub later (content changes never need this):
 
 ```bash
 git add .
@@ -112,24 +128,22 @@ git commit -m "Describe the change"
 git push
 ```
 
-Note: the repository is named like a GitHub Pages site, but this app needs a server (login, uploads, publishing), so it cannot be hosted by GitHub Pages. GitHub only stores the code; the website runs on Vercel (next step).
+### 9. Instant publishing (optional but recommended)
 
-### 9. Deploy to Vercel
+Out of the box the site refreshes within 15 minutes of a change. To make **Publish** rebuild the site right away:
 
-1. In Vercel click **Add New → Project** and import the GitHub repository.
-2. Framework preset: **Next.js** (detected automatically).
-3. Open **Environment Variables** and add the same three variables as in step 6. For `NEXT_PUBLIC_SITE_URL` use the address Vercel gives you (for example `https://portfolio-xyz.vercel.app`); update it again after step 10.
-4. Click **Deploy**. After a minute the site is live.
-5. Back in Supabase, go to **Authentication → URL Configuration**: set **Site URL** to your Vercel address and add `https://your-address/**` to **Redirect URLs**. This makes password-reset emails link to the right place.
+1. On GitHub open your profile menu → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Generate new token.
+2. Name it "Portfolio publish", choose an expiry (you can pick one year), and under **Repository access** select **Only select repositories** → `laurensujin.github.io`.
+3. Under **Permissions → Repository permissions** set **Contents** to **Read and write**. Generate the token and copy it.
+4. In the admin open **Settings → Site deployment**, enter `laurensujin/laurensujin.github.io` and the token, press **Save**, then **Test connection**.
 
-Every later push to GitHub redeploys the site automatically. Content changes do **not** need a redeploy.
+When the token expires, publishing keeps working through the 15-minute schedule until you paste a new one.
 
 ### 10. Connect a custom domain
 
-1. In Vercel open the project → **Settings → Domains → Add** and type your domain (for example `sujinlee.com`).
-2. Vercel shows the DNS records to add at the place where you bought the domain (usually an `A` record and a `CNAME` for `www`). Add them and wait for Vercel to show a green check (can take up to an hour).
-3. Update `NEXT_PUBLIC_SITE_URL` in Vercel to `https://sujinlee.com` and redeploy (Deployments → ⋯ → Redeploy).
-4. Update the Site URL and Redirect URLs in Supabase (step 9.5) to the new domain.
+1. In the repository open Settings → Pages → **Custom domain**, type your domain (for example `sujinlee.com`) and save. GitHub shows the DNS records to add at the place where you bought the domain (four `A` records and a `CNAME` for `www`). Tick **Enforce HTTPS** once the check turns green.
+2. Settings → Secrets and variables → Actions → **Variables** → New repository variable `SITE_URL` = `https://sujinlee.com`, then run the workflow again so links and the sitemap use the new address.
+3. Update the Supabase Site URL and Redirect URLs (end of step 8) to the new domain.
 
 ### 11. Log in to /admin
 
@@ -139,8 +153,8 @@ Go to `https://your-domain/admin`, enter the email and password from step 5. For
 
 1. Open `/admin` and sign in.
 2. **Projects** → click a project. Change text, upload images into any section (drag files straight onto an image slot), add sections with **Add section**, drag the ⋮⋮ handle to reorder.
-3. Press **Save draft** whenever you like, **Preview draft** to see it, and **Publish** when it is ready. The live site updates within seconds.
-4. **Photography** → **Add Photo Set** for new before/after pairs. **Profile**, **Homepage**, **Resume** and **Settings** work the same way and go live on save.
+3. Press **Save draft** whenever you like, **Preview draft** to see it, and **Publish** when it is ready. The site rebuilds in about three minutes (with the token from step 9) or within 15 minutes (without it).
+4. **Photography** → **Add Photo Set** for new before/after pairs. **Profile**, **Homepage** (including the hero image and the moving line of disciplines), **Resume** and **Settings** work the same way.
 5. **Media Library** shows every image, video and PDF uploaded into projects, photo sets and settings (resume PDFs are managed under **Resume**). Deleting a file that is still used somewhere warns you first and removes it from those places.
 
 ---
@@ -150,7 +164,8 @@ Go to `https://your-domain/admin`, enter the email and password from step 5. For
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Start the site locally at <http://localhost:3000> |
-| `npm run build` | Production build (Vercel runs this for you) |
+| `npm run build` | Builds the static site into `out/` (GitHub Actions runs this for you) |
+| `npm run serve:out` | Serves `out/` locally the way GitHub Pages does |
 | `npm run lint` | Check the code with ESLint |
 | `npm run typecheck` | Check TypeScript types |
 | `npm run test:e2e` | Run the end-to-end tests (needs the local Supabase stack, see below) |
@@ -168,7 +183,7 @@ npm run db:reset                       # wipe and re-seed the local database
 npm run db:stop                        # stop the local stack
 ```
 
-`npm run db:start` prints the local API URL and anon key; put those in `.env.local` while developing locally. Password-reset emails sent by the local stack can be read at the Mailpit URL it prints. Because the local stack lives on `127.0.0.1`, `next.config.ts` enables `images.dangerouslyAllowLocalIP` during `next dev` only; production builds keep the default protection.
+`npm run db:start` prints the local API URL and anon key; put those in `.env.local` while developing locally. Password-reset emails sent by the local stack can be read at the Mailpit URL it prints.
 
 The end-to-end tests (`npm run test:e2e`) reset the local database, create the admin account, and drive the real site and admin in a browser: login, creating and publishing a project with uploaded images, reordering sections with the keyboard, publishing a photo set and using the lightbox, uploading a resume, editing the homepage, deleting used media, and unpublishing.
 
@@ -180,4 +195,4 @@ The end-to-end tests (`npm run test:e2e`) reset the local database, create the a
 
 ## Notes on images
 
-Uploads go straight from the browser to Supabase Storage with a progress bar. Images wider or taller than 3000 px are resized in the browser before upload (PNG stays PNG, photos become high-quality JPEG) so the site never stores giant raw files. On the public site every image is served through `next/image`, which delivers a resized AVIF/WebP version for each screen size. Files keep their quality; visitors simply never download more pixels than they need.
+Uploads go straight from the browser to Supabase Storage with a progress bar. Images wider or taller than 3000 px are resized in the browser before upload (PNG stays PNG, photos become high-quality JPEG), and four smaller copies (480, 960, 1600 and 2400 px wide) are created at the same time. On the public site `next/image` with the custom loader in `src/lib/media/image-loader.ts` picks the copy that fits each screen, so visitors never download more pixels than they need. Anything without an uploaded image shows a generated placeholder visual until you add one.

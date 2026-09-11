@@ -5,11 +5,29 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD } from "./global-setup";
 const fixture = (name: string) => path.join(__dirname, "fixtures", name);
 
 async function login(page: Page) {
-  await page.goto("/admin/login");
+  await page.goto("/admin/login/");
   await page.fill("#email", ADMIN_EMAIL);
   await page.fill("#password", ADMIN_PASSWORD);
   await page.click("button[type=submit]");
-  await page.waitForURL("**/admin");
+  await page.waitForURL(/\/admin\/?$/);
+}
+
+
+/**
+ * Opens a public case-study page. In `next dev` the list of known slugs is
+ * cached and refreshed in the background, so the first visit right after
+ * publishing (or unpublishing) can be stale; retry a couple of times.
+ */
+async function openWork(page: Page, slug: string, expectation: "found" | "missing") {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const response = await page.goto(`/work/${slug}/`);
+    const status = response?.status() ?? 0;
+    if (expectation === "found" && status === 200) return;
+    if (expectation === "missing" && status === 404) return;
+    await page.waitForTimeout(700);
+  }
+  const response = await page.goto(`/work/${slug}/`);
+  expect(response?.status()).toBe(expectation === "found" ? 200 : 404);
 }
 
 test.describe.configure({ mode: "serial" });
@@ -49,8 +67,8 @@ test("case study page renders its sections", async ({ page }) => {
 });
 
 test("admin area requires a login", async ({ page }) => {
-  await page.goto("/admin/projects");
-  await expect(page).toHaveURL(/\/admin\/login\?next=%2Fadmin%2Fprojects/);
+  await page.goto("/admin/projects/");
+  await expect(page).toHaveURL(/\/admin\/login\/\?next=%2Fadmin%2Fprojects/);
   await page.fill("#email", ADMIN_EMAIL);
   await page.fill("#password", "wrong-password");
   await page.click("button[type=submit]");
@@ -59,9 +77,9 @@ test("admin area requires a login", async ({ page }) => {
 
 test("create, build, publish and reorder a project from the admin", async ({ page }) => {
   await login(page);
-  await page.goto("/admin/projects");
+  await page.goto("/admin/projects/");
   await page.getByTestId("add-project").click();
-  await page.waitForURL(/\/admin\/projects\/[0-9a-f-]{36}$/);
+  await page.waitForURL(/\/admin\/projects\/edit\/\?id=[0-9a-f-]{36}$/);
 
   await page.fill("#title", "E2E Test Project");
   await expect(page.locator("#slug")).toHaveValue("e2e-test-project");
@@ -100,7 +118,7 @@ test("create, build, publish and reorder a project from the admin", async ({ pag
   await expect(page.getByRole("status").filter({ hasText: "Published" })).toBeVisible();
 
   // Public page shows the published content in order: heading, paragraph, image.
-  await page.goto("/work/e2e-test-project");
+  await openWork(page, "e2e-test-project", "found");
   await expect(page.locator("h1")).toHaveText("E2E Test Project");
   await expect(page.getByRole("heading", { name: "Automated Section" })).toBeVisible();
   await expect(page.getByText("This paragraph was written by the end-to-end test.")).toBeVisible();
@@ -113,9 +131,9 @@ test("create, build, publish and reorder a project from the admin", async ({ pag
   expect(order.indexOf("Automated Section")).toBeLessThan(order.findIndex((t) => t.includes("end-to-end test")));
 
   // Reorder with the keyboard (dnd-kit): pick up the paragraph, move it up, drop.
-  await page.goto("/admin/projects");
+  await page.goto("/admin/projects/");
   await page.getByRole("link", { name: "E2E Test Project" }).click();
-  await page.waitForURL(/\/admin\/projects\/[0-9a-f-]{36}$/);
+  await page.waitForURL(/\/admin\/projects\/edit\/\?id=[0-9a-f-]{36}$/);
   const paragraphHandle = page.locator('[data-block-type="paragraph"]').last().getByRole("button", { name: "Drag to reorder" });
   await paragraphHandle.focus();
   // Short pauses between keys, like a person would press them: dnd-kit measures
@@ -130,7 +148,7 @@ test("create, build, publish and reorder a project from the admin", async ({ pag
   await page.getByTestId("publish").click();
   await expect(page.getByRole("status").filter({ hasText: "Published" })).toBeVisible();
 
-  await page.goto("/work/e2e-test-project");
+  await openWork(page, "e2e-test-project", "found");
   const reordered = await page.locator("article h2, article p").allInnerTexts();
   expect(reordered.findIndex((t) => t.includes("end-to-end test"))).toBeLessThan(reordered.indexOf("Automated Section"));
 
@@ -141,7 +159,7 @@ test("create, build, publish and reorder a project from the admin", async ({ pag
 
 test("photography set publishes to the Portrait section with a working lightbox", async ({ page }) => {
   await login(page);
-  await page.goto("/admin/photography/new");
+  await page.goto("/admin/photography/new/");
   const before = page.locator("div", { has: page.locator("span:text-is('Before')") }).locator('input[type="file"]').first();
   await before.setInputFiles(fixture("before.png"));
   await expect(page.getByRole("button", { name: "Replace" }).first()).toBeVisible({ timeout: 30_000 });
@@ -152,7 +170,7 @@ test("photography set publishes to the Portrait section with a working lightbox"
   await page.fill("#photographer", "Sujin Lee");
   await page.selectOption("#status", "published");
   await page.getByTestId("save-set").click();
-  await page.waitForURL("**/admin/photography");
+  await page.waitForURL(/\/admin\/photography\/?$/);
   await expect(page.getByTestId("photo-row")).toHaveCount(1);
 
   await page.goto("/");
@@ -172,7 +190,7 @@ test("photography set publishes to the Portrait section with a working lightbox"
 
 test("resume upload appears in the profile drawer", async ({ page }) => {
   await login(page);
-  await page.goto("/admin/resume");
+  await page.goto("/admin/resume/");
   await page.getByTestId("resume-input").setInputFiles(fixture("resume.pdf"));
   await expect(page.getByText("Current", { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("status").filter({ hasText: "Resume uploaded" })).toBeVisible();
@@ -186,17 +204,17 @@ test("resume upload appears in the profile drawer", async ({ page }) => {
 
 test("homepage editor changes the live hero", async ({ page }) => {
   await login(page);
-  await page.goto("/admin/homepage");
+  await page.goto("/admin/homepage/");
   await page.fill("#heroHeadline", "Headline changed\nby the test.");
   await page.getByTestId("save-homepage").click();
-  await expect(page.getByRole("status").filter({ hasText: "Homepage saved" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
   await page.goto("/");
   await expect(page.locator("h1")).toContainText("Headline changed");
 });
 
 test("media library warns before deleting a file that is in use", async ({ page }) => {
   await login(page);
-  await page.goto("/admin/media");
+  await page.goto("/admin/media/");
   await expect(page.getByTestId("media-card").first()).toBeVisible();
   // The large-image block of the E2E project used the "cover.png" fixture.
   await page.getByTestId("media-card").filter({ hasText: "cover" }).first().click();
@@ -211,17 +229,16 @@ test("media library warns before deleting a file that is in use", async ({ page 
   await expect(page.getByRole("status").filter({ hasText: "File deleted" })).toBeVisible();
 
   // The public page still works; the removed image is simply gone.
-  await page.goto("/work/e2e-test-project");
+  await openWork(page, "e2e-test-project", "found");
   await expect(page.locator("h1")).toHaveText("E2E Test Project");
   await expect(page.getByText("Uploaded by Playwright")).toHaveCount(0);
 });
 
 test("unpublishing hides the project from visitors", async ({ page }) => {
   await login(page);
-  await page.goto("/admin/projects");
+  await page.goto("/admin/projects/");
   await page.getByRole("link", { name: "E2E Test Project" }).click();
   await page.getByRole("button", { name: "Unpublish", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "unpublished" })).toBeVisible();
-  const response = await page.goto("/work/e2e-test-project");
-  expect(response?.status()).toBe(404);
+  await openWork(page, "e2e-test-project", "missing");
 });

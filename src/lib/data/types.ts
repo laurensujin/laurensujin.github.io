@@ -21,6 +21,7 @@ export interface SiteSettings {
   heroDescription: string;
   heroLocation: string;
   heroCtaLabel: string;
+  heroTicker: string;
   selectedWorkLabel: string;
   photographyLabel: string;
   photographySubtitle: string;
@@ -33,6 +34,7 @@ export interface SiteSettings {
   seoDescription: string;
   ogImage: MediaRef | null;
   favicon: MediaRef | null;
+  heroImage: MediaRef | null;
 }
 
 export interface Profile {
@@ -129,6 +131,7 @@ export interface MediaItem {
   sizeBytes: number;
   width: number | null;
   height: number | null;
+  sizes: number[];
   title: string;
   altText: string;
   originalFilename: string | null;

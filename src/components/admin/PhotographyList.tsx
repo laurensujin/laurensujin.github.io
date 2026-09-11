@@ -54,13 +54,13 @@ export function PhotographyList({ sets: initial }: { sets: PhotographySet[] }) {
         title="Photography"
         description="Before / after sets for the Portrait section. Drag to reorder."
         actions={
-          <ButtonLink href="/admin/photography/new" variant="primary">
+          <ButtonLink href="/admin/photography/new/" variant="primary">
             <IconPlus /> Add Photo Set
           </ButtonLink>
         }
       />
       {sets.length === 0 ? (
-        <EmptyState title="No photo sets yet" description="Add a before and after pair to show the Portrait section on the homepage." action={<ButtonLink href="/admin/photography/new" variant="primary">Add Photo Set</ButtonLink>} />
+        <EmptyState title="No photo sets yet" description="Add a before and after pair to show the Portrait section on the homepage." action={<ButtonLink href="/admin/photography/new/" variant="primary">Add Photo Set</ButtonLink>} />
       ) : (
         <SortableList
           items={sets}
@@ -75,7 +75,7 @@ export function PhotographyList({ sets: initial }: { sets: PhotographySet[] }) {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Link href={`/admin/photography/${set.id}`} className="truncate text-sm font-medium text-neutral-900 hover:underline">
+                  <Link href={`/admin/photography/edit/?id=${set.id}`} className="truncate text-sm font-medium text-neutral-900 hover:underline">
                     {set.title || "Untitled photo set"}
                   </Link>
                   <StatusBadge status={set.status} />
@@ -89,7 +89,7 @@ export function PhotographyList({ sets: initial }: { sets: PhotographySet[] }) {
                 <Toggle checked={set.status === "published"} onChange={(value) => togglePublished(set, value)} label="Published" />
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <Link href={`/admin/photography/${set.id}`} className="rounded-md border border-neutral-300 px-3 py-1.5 text-[13px] font-medium hover:border-neutral-500">
+                <Link href={`/admin/photography/edit/?id=${set.id}`} className="rounded-md border border-neutral-300 px-3 py-1.5 text-[13px] font-medium hover:border-neutral-500">
                   Edit
                 </Link>
                 <Button size="sm" variant="ghost" className="text-red-700" onClick={() => setPendingDelete(set)}>

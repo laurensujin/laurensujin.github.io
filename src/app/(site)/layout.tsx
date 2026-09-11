@@ -4,9 +4,8 @@ import { DrawerProvider } from "@/components/site/DrawerProvider";
 import { ProfileDrawer } from "@/components/site/ProfileDrawer";
 import { getProfileData, getSiteSettings } from "@/lib/data/public";
 
-// Public pages are prerendered and refreshed when content is published.
-// This is only a safety net: publishing from /admin refreshes them immediately.
-export const revalidate = 3600;
+// Public pages are generated at build time by GitHub Actions and served as
+// static files. Publishing from /admin triggers a rebuild (see deploy.yml).
 
 export default async function SiteLayout({ children }: LayoutProps<"/">) {
   const [settings, profileData] = await Promise.all([getSiteSettings(), getProfileData()]);

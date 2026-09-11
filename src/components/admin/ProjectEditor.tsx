@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { deleteProject, discardProjectDraft, duplicateProject, publishProject, saveProjectDraft, setProjectFeatured, setProjectStatus } from "@/lib/actions/projects";
 import type { ProjectContent } from "@/lib/content/schema";
 import type { AdminProject } from "@/lib/data/types";
@@ -30,10 +30,10 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
   const [savedAt, setSavedAt] = useState(project.draftUpdatedAt);
   const [dirty, setDirty] = useState(false);
   const [slugTouched, setSlugTouched] = useState(project.draft.slug !== slugify(project.draft.title));
-  const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState<"save" | "publish" | "preview" | "other" | null>(null);
   const [confirm, setConfirm] = useState<"delete" | "discard" | null>(null);
   const lastSaved = useRef(JSON.stringify(project.draft));
+  const [publishedSlug, setPublishedSlug] = useState(project.slug);
 
   const update = useCallback((patch: Partial<ProjectContent>) => {
     setContent((current) => {
@@ -96,16 +96,16 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
     setStatus("published");
     setPublishedAt(result.data.publishedAt);
     setSavedAt(result.data.publishedAt);
+    setPublishedSlug(result.data.slug);
     setDirty(false);
-    toast("Published. The live site is updating.");
-    startTransition(() => router.refresh());
+    toast(result.data.rebuild.message.replace(/^Saved\./, "Published."));
   };
 
   const preview = async () => {
     setBusy("preview");
     const ok = dirty ? await save() : true;
     setBusy(null);
-    if (ok) window.open(`/admin/preview/${project.id}`, "_blank", "noopener");
+    if (ok) window.open(`/admin/preview/?id=${project.id}`, "_blank", "noopener");
   };
 
   const changeStatus = async (next: "draft" | "hidden" | "published") => {
@@ -132,7 +132,7 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
     setBusy(null);
     if (!result.ok) return toast(result.error, "error");
     toast("Project duplicated");
-    router.push(`/admin/projects/${result.data.id}`);
+    router.push(`/admin/projects/edit/?id=${result.data.id}`);
   };
 
   const discard = async () => {
@@ -154,7 +154,7 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
     setConfirm(null);
     if (!result.ok) return toast(result.error, "error");
     toast("Project deleted");
-    router.push("/admin/projects");
+    router.push("/admin/projects/");
   };
 
   const hasUnpublished = status !== "published" || !publishedAt || dirty || (savedAt !== null && publishedAt !== null && new Date(savedAt).getTime() > new Date(publishedAt).getTime() + 1000);
@@ -270,7 +270,7 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
             </div>
           </dl>
           {status === "published" ? (
-            <Link href={`/work/${project.slug}`} target="_blank" className="mt-3 inline-flex items-center gap-1 text-xs text-neutral-600 underline underline-offset-2 hover:text-neutral-900">
+            <Link href={`/work/${publishedSlug}/`} target="_blank" className="mt-3 inline-flex items-center gap-1 text-xs text-neutral-600 underline underline-offset-2 hover:text-neutral-900">
               View live page <IconExternal width={12} height={12} />
             </Link>
           ) : null}
@@ -278,7 +278,7 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
 
         <Card title="Settings">
           <div className="flex flex-col gap-4">
-            <Field label="URL slug" hint={`Changes take effect when you publish. /work/${content.slug || "…"}`} htmlFor="slug">
+            <Field label="URL slug" hint={`Changes take effect when you publish. /work/${content.slug || "…"}/`} htmlFor="slug">
               <Input
                 id="slug"
                 value={content.slug}
@@ -289,7 +289,7 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
                 onBlur={(e) => update({ slug: slugify(e.target.value) })}
               />
             </Field>
-            <Toggle checked={featured} onChange={toggleFeatured} label="Featured" description="Featured projects span the full width of the homepage. Applies immediately." />
+            <Toggle checked={featured} onChange={toggleFeatured} label="Featured" description="Featured projects span the full width of the homepage. Applies with the next site rebuild." />
           </div>
         </Card>
 
@@ -329,7 +329,6 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
             </Button>
           </div>
         </Card>
-        {pending ? <p className="text-xs text-neutral-400">Refreshing…</p> : null}
       </aside>
 
       <ConfirmDialog

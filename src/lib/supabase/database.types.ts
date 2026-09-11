@@ -34,6 +34,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_settings: {
+        Row: {
+          github_repo: string
+          github_token: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          github_repo?: string
+          github_token?: string
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          github_repo?: string
+          github_token?: string
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admins: {
         Row: {
           created_at: string
@@ -99,6 +120,7 @@ export type Database = {
           original_filename: string | null
           path: string
           size_bytes: number
+          sizes: number[]
           title: string
           updated_at: string
           width: number | null
@@ -113,6 +135,7 @@ export type Database = {
           original_filename?: string | null
           path: string
           size_bytes?: number
+          sizes?: number[]
           title?: string
           updated_at?: string
           width?: number | null
@@ -127,6 +150,7 @@ export type Database = {
           original_filename?: string | null
           path?: string
           size_bytes?: number
+          sizes?: number[]
           title?: string
           updated_at?: string
           width?: number | null
@@ -297,6 +321,7 @@ export type Database = {
       site_settings: {
         Row: {
           contact_email: string
+          content_updated_at: string
           favicon: Json | null
           footer_copyright: string
           footer_credit: string
@@ -304,7 +329,9 @@ export type Database = {
           hero_cta_label: string
           hero_description: string
           hero_headline: string
+          hero_image: Json | null
           hero_location: string
+          hero_ticker: string
           id: number
           og_image: Json | null
           photography_description: string
@@ -318,6 +345,7 @@ export type Database = {
         }
         Insert: {
           contact_email?: string
+          content_updated_at?: string
           favicon?: Json | null
           footer_copyright?: string
           footer_credit?: string
@@ -325,7 +353,9 @@ export type Database = {
           hero_cta_label?: string
           hero_description?: string
           hero_headline?: string
+          hero_image?: Json | null
           hero_location?: string
+          hero_ticker?: string
           id?: number
           og_image?: Json | null
           photography_description?: string
@@ -339,6 +369,7 @@ export type Database = {
         }
         Update: {
           contact_email?: string
+          content_updated_at?: string
           favicon?: Json | null
           footer_copyright?: string
           footer_credit?: string
@@ -346,7 +377,9 @@ export type Database = {
           hero_cta_label?: string
           hero_description?: string
           hero_headline?: string
+          hero_image?: Json | null
           hero_location?: string
+          hero_ticker?: string
           id?: number
           og_image?: Json | null
           photography_description?: string

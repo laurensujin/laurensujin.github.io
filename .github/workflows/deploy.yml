@@ -1,0 +1,105 @@
+# Builds the portfolio as static files and publishes them to GitHub Pages.
+#
+# Runs when:
+#   - code is pushed to main
+#   - the admin triggers "content-published" (needs a GitHub token in Admin → Settings)
+#   - every 15 minutes, rebuilding only if content changed since the last deploy
+#   - you press "Run workflow" in the Actions tab
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+# Optional repository variable: SITE_URL (defaults to https://<owner>.github.io)
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [content-published]
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io', github.repository_owner) }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      needed: ${{ steps.decide.outputs.needed }}
+    steps:
+      - name: Decide whether a build is needed
+        id: decide
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
+            echo "::warning::Supabase secrets are not set yet (see README step 8). Skipping build."
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Scheduled run: rebuild only when the content changed since the last deploy.
+          CURRENT=$(curl -sf "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/site_settings?select=content_updated_at&id=eq.1" \
+            -H "apikey: $NEXT_PUBLIC_SUPABASE_ANON_KEY" -H "Authorization: Bearer $NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s)[0].content_updated_at)}catch{console.log("")}})')
+          DEPLOYED=$(curl -sf "$NEXT_PUBLIC_SITE_URL/build-info.json" \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).contentUpdatedAt||"")}catch{console.log("")}})' || echo "")
+          echo "content updated: $CURRENT / deployed: $DEPLOYED"
+          if [ -n "$CURRENT" ] && [ "$CURRENT" = "$DEPLOYED" ]; then
+            echo "Site is up to date."
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out code
+        if: steps.decide.outputs.needed == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: steps.decide.outputs.needed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.decide.outputs.needed == 'true'
+        run: npm ci
+
+      - name: Build static site
+        if: steps.decide.outputs.needed == 'true'
+        run: npm run build
+
+      - name: Upload site
+        if: steps.decide.outputs.needed == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.needed == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

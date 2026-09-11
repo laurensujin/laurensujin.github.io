@@ -1,23 +1,28 @@
+"use client";
+
 import Link from "next/link";
-import { ButtonLink, Card, StatusBadge } from "@/components/admin/ui";
+import { ButtonLink, Card, ErrorState, LoadingState, StatusBadge } from "@/components/admin/ui";
+import { useLoad } from "@/lib/auth-client";
 import { getDashboardStats } from "@/lib/data/admin";
 import { formatDate } from "@/lib/utils";
 
-export default async function DashboardPage() {
-  const stats = await getDashboardStats();
+export default function DashboardPage() {
+  const { data: stats, error, loading } = useLoad(getDashboardStats, []);
+  if (loading) return <LoadingState />;
+  if (error || !stats) return <ErrorState message={error} />;
 
   const tiles = [
-    { label: "Published projects", value: stats.publishedProjects, href: "/admin/projects" },
-    { label: "Drafts & hidden", value: stats.draftProjects, href: "/admin/projects" },
-    { label: "Photography sets", value: `${stats.publishedSets} / ${stats.photographySets}`, href: "/admin/photography" },
-    { label: "Media files", value: stats.mediaCount, href: "/admin/media" },
+    { label: "Published projects", value: stats.publishedProjects, href: "/admin/projects/" },
+    { label: "Drafts & hidden", value: stats.draftProjects, href: "/admin/projects/" },
+    { label: "Photography sets", value: `${stats.publishedSets} / ${stats.photographySets}`, href: "/admin/photography/" },
+    { label: "Media files", value: stats.mediaCount, href: "/admin/media/" },
   ];
 
   return (
     <>
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-neutral-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-neutral-500">Everything you publish here appears on the public site right away.</p>
+        <p className="mt-1 text-sm text-neutral-500">Everything you publish here is rebuilt onto the public site automatically.</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -30,7 +35,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card title="Projects" actions={<ButtonLink href="/admin/projects" size="sm">Manage</ButtonLink>}>
+        <Card title="Projects" actions={<ButtonLink href="/admin/projects/" size="sm">Manage</ButtonLink>}>
           {stats.projects.length === 0 ? (
             <p className="text-sm text-neutral-500">No projects yet.</p>
           ) : (
@@ -38,7 +43,7 @@ export default async function DashboardPage() {
               {stats.projects.map((project) => (
                 <li key={project.id} className="flex items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
-                    <Link href={`/admin/projects/${project.id}`} className="block truncate text-sm font-medium text-neutral-900 hover:underline">
+                    <Link href={`/admin/projects/edit/?id=${project.id}`} className="block truncate text-sm font-medium text-neutral-900 hover:underline">
                       {project.draft.title || "Untitled project"}
                     </Link>
                     <p className="text-xs text-neutral-500">
@@ -56,28 +61,33 @@ export default async function DashboardPage() {
         <Card title="Quick actions">
           <ul className="flex flex-col gap-2 text-sm">
             <li>
-              <Link href="/admin/projects" className="text-neutral-900 underline underline-offset-2">
+              <Link href="/admin/projects/" className="text-neutral-900 underline underline-offset-2">
                 Add or edit a project
               </Link>
             </li>
             <li>
-              <Link href="/admin/photography" className="text-neutral-900 underline underline-offset-2">
+              <Link href="/admin/photography/" className="text-neutral-900 underline underline-offset-2">
                 Add a before / after photo set
               </Link>
             </li>
             <li>
-              <Link href="/admin/homepage" className="text-neutral-900 underline underline-offset-2">
-                Change the homepage copy
+              <Link href="/admin/homepage/" className="text-neutral-900 underline underline-offset-2">
+                Change the homepage copy and hero image
               </Link>
             </li>
             <li>
-              <Link href="/admin/profile" className="text-neutral-900 underline underline-offset-2">
+              <Link href="/admin/profile/" className="text-neutral-900 underline underline-offset-2">
                 Update the profile, education and links
               </Link>
             </li>
             <li>
-              <Link href="/admin/resume" className="text-neutral-900 underline underline-offset-2">
+              <Link href="/admin/resume/" className="text-neutral-900 underline underline-offset-2">
                 {stats.activeResume ? `Replace the resume (${stats.activeResume.filename})` : "Upload a resume PDF"}
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/settings/" className="text-neutral-900 underline underline-offset-2">
+                Connect GitHub for instant publishing
               </Link>
             </li>
           </ul>

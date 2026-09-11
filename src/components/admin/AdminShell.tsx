@@ -1,29 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { signOut } from "@/lib/actions/auth";
 import { cn } from "@/lib/utils";
 import { IconClose, IconExternal, IconMenu } from "./icons";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/projects", label: "Projects" },
-  { href: "/admin/photography", label: "Photography" },
-  { href: "/admin/profile", label: "Profile" },
-  { href: "/admin/homepage", label: "Homepage" },
-  { href: "/admin/resume", label: "Resume" },
-  { href: "/admin/media", label: "Media Library" },
-  { href: "/admin/settings", label: "Settings" },
+  { href: "/admin/", label: "Dashboard" },
+  { href: "/admin/projects/", label: "Projects" },
+  { href: "/admin/photography/", label: "Photography" },
+  { href: "/admin/profile/", label: "Profile" },
+  { href: "/admin/homepage/", label: "Homepage" },
+  { href: "/admin/resume/", label: "Resume" },
+  { href: "/admin/media/", label: "Media Library" },
+  { href: "/admin/settings/", label: "Settings" },
 ];
 
 /** Sidebar + top bar around every admin page. */
 export function AdminShell({ email, children }: { email: string; children: ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname().replace(/\/$/, "") || "/";
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  const isActive = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
+  const isActive = (href: string) => {
+    const target = href.replace(/\/$/, "");
+    return target === "/admin" ? pathname === "/admin" : pathname.startsWith(target);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace("/admin/login/");
+  };
 
   const nav = (
     <nav className="flex flex-col gap-0.5" aria-label="Admin">
@@ -48,7 +57,7 @@ export function AdminShell({ email, children }: { email: string; children: React
     <div className="admin-root flex min-h-screen font-sans">
       {/* Desktop sidebar */}
       <aside className="hidden w-56 shrink-0 flex-col border-r border-neutral-200 bg-neutral-100 px-3 py-4 md:flex">
-        <Link href="/admin" className="mb-6 px-3 text-sm font-semibold tracking-tight text-neutral-900">
+        <Link href="/admin/" className="mb-6 px-3 text-sm font-semibold tracking-tight text-neutral-900">
           Portfolio Admin
         </Link>
         {nav}
@@ -59,18 +68,16 @@ export function AdminShell({ email, children }: { email: string; children: React
           <span className="truncate" title={email}>
             {email}
           </span>
-          <form action={signOut}>
-            <button type="submit" className="cursor-pointer underline underline-offset-2 hover:text-neutral-900">
-              Sign out
-            </button>
-          </form>
+          <button type="button" onClick={handleSignOut} className="cursor-pointer text-left underline underline-offset-2 hover:text-neutral-900">
+            Sign out
+          </button>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
         <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-4 py-3 md:hidden">
-          <Link href="/admin" className="text-sm font-semibold">
+          <Link href="/admin/" className="text-sm font-semibold">
             Portfolio Admin
           </Link>
           <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label="Menu" className="cursor-pointer rounded p-1.5 hover:bg-neutral-100">
@@ -84,11 +91,9 @@ export function AdminShell({ email, children }: { email: string; children: React
               <a href="/" target="_blank" rel="noopener" className="inline-flex items-center gap-1">
                 View site <IconExternal width={12} height={12} />
               </a>
-              <form action={signOut}>
-                <button type="submit" className="cursor-pointer underline underline-offset-2">
-                  Sign out
-                </button>
-              </form>
+              <button type="button" onClick={handleSignOut} className="cursor-pointer underline underline-offset-2">
+                Sign out
+              </button>
             </div>
           </div>
         ) : null}

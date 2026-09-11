@@ -25,6 +25,8 @@ export const mediaRefSchema = z.object({
   width: z.number().int().nullable().catch(null),
   height: z.number().int().nullable().catch(null),
   alt: z.string().catch(""),
+  /** Widths of the resized copies made at upload time (see media/upload.ts). */
+  sizes: z.array(z.number().int()).catch([]),
 });
 export type MediaRef = z.infer<typeof mediaRefSchema>;
 

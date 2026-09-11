@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { MediaRef } from "@/lib/content/schema";
-import { refUrl } from "@/lib/media/url";
+import { imageSrc } from "@/lib/media/url";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -15,11 +15,12 @@ interface Props {
 }
 
 /**
- * Renders an uploaded image through next/image so visitors get a resized,
- * modern-format version instead of the original upload.
+ * Renders an uploaded image through next/image. The custom image loader
+ * (src/lib/media/image-loader.ts) serves the resized copy that fits the
+ * requested width, so visitors never download more pixels than needed.
  */
 export function MediaImage({ media, sizes, className, fill, priority, quality = 85, alt }: Props) {
-  const src = refUrl(media);
+  const src = imageSrc(media);
   if (!src) return null;
   const altText = alt ?? media.alt ?? "";
 

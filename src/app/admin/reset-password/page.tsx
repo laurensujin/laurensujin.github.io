@@ -1,16 +1,27 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { AuthForm } from "@/components/admin/AuthForm";
 import { updatePassword } from "@/lib/actions/auth";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/auth-client";
 
-export default async function ResetPasswordPage() {
+export default function ResetPasswordPage() {
+  const router = useRouter();
+
   // The email link signs the user in first (see /auth/callback), so anyone
   // landing here without a session should request a new link.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login?error=link");
+  useEffect(() => {
+    getSessionUser().then((user) => {
+      if (!user) router.replace("/admin/login/?error=link");
+    });
+  }, [router]);
 
-  return <AuthForm mode="reset" action={updatePassword} />;
+  return (
+    <AuthForm
+      mode="reset"
+      onSubmit={(v) => updatePassword(v.password ?? "", v.confirm ?? "")}
+      onSuccess={() => window.setTimeout(() => router.replace("/admin/"), 800)}
+    />
+  );
 }

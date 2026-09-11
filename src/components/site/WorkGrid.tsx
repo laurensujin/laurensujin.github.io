@@ -6,7 +6,7 @@ import { ProjectPreview } from "./ProjectPreview";
 export function WorkGrid({ label, projects }: { label: string; projects: PublicProject[] }) {
   return (
     <Container>
-      <section id="work" className="scroll-mt-24 pt-10 md:pt-16" aria-labelledby="work-heading">
+      <section id="work" className="scroll-mt-24 pt-6 md:pt-8" aria-labelledby="work-heading">
         <div className="flex items-baseline justify-between border-t border-line pt-4">
           <h2 id="work-heading" className="eyebrow text-fg">
             {label}

@@ -98,6 +98,7 @@ create table public.media (
   size_bytes        bigint not null default 0,
   width             integer,                       -- images/videos only
   height            integer,
+  sizes             integer[] not null default '{}', -- widths of the resized copies (-w480.jpg, ...)
   title             text not null default '',      -- display title in the library
   alt_text          text not null default '',      -- default alt text for images
   original_filename text,
@@ -146,6 +147,7 @@ create table public.site_settings (
   hero_description        text not null default '',
   hero_location           text not null default '',
   hero_cta_label          text not null default 'Selected Work',
+  hero_ticker             text not null default '',  -- disciplines shown in the moving line, separated by ·
   selected_work_label     text not null default 'Selected Work',
   photography_label       text not null default 'Portrait',
   photography_subtitle    text not null default '',
@@ -158,6 +160,10 @@ create table public.site_settings (
   seo_description         text not null default '',
   og_image                jsonb,                    -- media reference or null
   favicon                 jsonb,                    -- media reference or null
+  hero_image              jsonb,                    -- media reference or null (landing visual)
+  -- Bumped whenever something public changes. The GitHub Actions workflow
+  -- compares it with the last build to decide whether to rebuild the site.
+  content_updated_at      timestamptz not null default now(),
   updated_at              timestamptz not null default now()
 );
 
@@ -418,6 +424,29 @@ create policy "Admins can manage resume files"
   with check (public.is_admin());
 
 -- ----------------------------------------------------------------------------
+-- Private admin settings (never readable by visitors)
+-- ----------------------------------------------------------------------------
+
+create table public.admin_settings (
+  id           integer primary key default 1 check (id = 1),
+  github_repo  text not null default '',   -- e.g. laurensujin/laurensujin.github.io
+  github_token text not null default '',   -- fine-grained token used to trigger site rebuilds
+  updated_at   timestamptz not null default now()
+);
+
+create trigger admin_settings_set_updated_at
+  before update on public.admin_settings
+  for each row execute function public.set_updated_at();
+
+alter table public.admin_settings enable row level security;
+
+create policy "Admins can manage admin settings"
+  on public.admin_settings for all
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- ----------------------------------------------------------------------------
 -- Storage bucket for all uploads (images, videos, PDFs)
 -- ----------------------------------------------------------------------------
 
@@ -466,6 +495,7 @@ create policy "Admins can delete media files"
 
 insert into public.site_settings (id) values (1) on conflict (id) do nothing;
 insert into public.profile (id) values (1) on conflict (id) do nothing;
+insert into public.admin_settings (id) values (1) on conflict (id) do nothing;
 
 -- ----------------------------------------------------------------------------
 -- Table privileges. Row Level Security (above) still decides which rows each
@@ -497,6 +527,7 @@ grant insert, update, delete on
 to authenticated;
 
 grant select, insert, update, delete on public.project_drafts to authenticated;
+grant select, insert, update, delete on public.admin_settings to authenticated;
 grant select on public.admins to authenticated;
 
 grant execute on function public.reorder_projects(uuid[]) to authenticated;

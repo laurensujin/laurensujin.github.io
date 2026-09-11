@@ -25,7 +25,7 @@ export function ProjectsList({ projects: initial }: { projects: AdminProject[] }
     const result = await createProject();
     setBusy(false);
     if (!result.ok) return toast(result.error, "error");
-    router.push(`/admin/projects/${result.data.id}`);
+    router.push(`/admin/projects/edit/?id=${result.data.id}`);
   };
 
   const reorder = async (next: AdminProject[]) => {
@@ -54,7 +54,7 @@ export function ProjectsList({ projects: initial }: { projects: AdminProject[] }
     const result = await duplicateProject(project.id);
     setBusy(false);
     if (!result.ok) return toast(result.error, "error");
-    router.push(`/admin/projects/${result.data.id}`);
+    router.push(`/admin/projects/edit/?id=${result.data.id}`);
   };
 
   const remove = async () => {
@@ -93,7 +93,7 @@ export function ProjectsList({ projects: initial }: { projects: AdminProject[] }
               <MediaThumb media={project.draft.cover ?? project.live.cover} className="h-14 w-14 shrink-0 rounded" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Link href={`/admin/projects/${project.id}`} className="truncate text-sm font-medium text-neutral-900 hover:underline">
+                  <Link href={`/admin/projects/edit/?id=${project.id}`} className="truncate text-sm font-medium text-neutral-900 hover:underline">
                     {project.draft.title || "Untitled project"}
                   </Link>
                   <StatusBadge status={project.status} />
@@ -108,10 +108,10 @@ export function ProjectsList({ projects: initial }: { projects: AdminProject[] }
                 <Toggle checked={project.isFeatured} onChange={(value) => toggleFeatured(project, value)} label="Featured" />
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <Link href={`/admin/projects/${project.id}`} className="rounded-md border border-neutral-300 px-3 py-1.5 text-[13px] font-medium hover:border-neutral-500">
+                <Link href={`/admin/projects/edit/?id=${project.id}`} className="rounded-md border border-neutral-300 px-3 py-1.5 text-[13px] font-medium hover:border-neutral-500">
                   Edit
                 </Link>
-                <Link href={`/admin/preview/${project.id}`} target="_blank" className="hidden items-center gap-1 rounded-md px-2 py-1.5 text-[13px] text-neutral-600 hover:bg-neutral-100 sm:inline-flex">
+                <Link href={`/admin/preview/?id=${project.id}`} target="_blank" className="hidden items-center gap-1 rounded-md px-2 py-1.5 text-[13px] text-neutral-600 hover:bg-neutral-100 sm:inline-flex">
                   Preview <IconExternal width={12} height={12} />
                 </Link>
                 <Button size="sm" variant="ghost" onClick={() => duplicate(project)} disabled={busy} className="hidden sm:inline-flex">

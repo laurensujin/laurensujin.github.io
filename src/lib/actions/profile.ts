@@ -1,10 +1,9 @@
-"use server";
+"use client";
 
 import { z } from "zod";
-import { adminAction } from "@/lib/auth";
+import { runAdmin } from "@/lib/auth-client";
 import { mediaRefSchema } from "@/lib/content/schema";
-import { revalidatePublicSite } from "@/lib/revalidate";
-import { createClient } from "@/lib/supabase/server";
+import { publishToSite } from "@/lib/deploy";
 import type { Json } from "@/lib/supabase/database.types";
 
 const text = z.string().max(5000).catch("");
@@ -43,9 +42,8 @@ export type ProfileInput = z.input<typeof profileInput>;
 
 /** Saves the profile, the education list and the links list in one go. */
 export async function saveProfile(input: ProfileInput) {
-  return adminAction(async () => {
+  return runAdmin(async (supabase) => {
     const data = profileInput.parse(input);
-    const supabase = await createClient();
 
     const profileUpdate = await supabase
       .from("profile")
@@ -99,6 +97,6 @@ export async function saveProfile(input: ProfileInput) {
       : await supabase.from("social_links").delete().gte("sort_order", 0);
     if (linkDelete.error) throw new Error(linkDelete.error.message);
 
-    revalidatePublicSite();
+    return publishToSite(supabase);
   });
 }

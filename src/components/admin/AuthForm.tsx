@@ -1,30 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useState, type FormEvent } from "react";
 import type { AuthFormState } from "@/lib/actions/auth";
 import { Button, Field, Input } from "./ui";
 
-type Action = (prev: AuthFormState, formData: FormData) => Promise<AuthFormState>;
-
 interface Props {
   mode: "login" | "forgot" | "reset";
-  action: Action;
-  next?: string;
+  onSubmit: (values: Record<string, string>) => Promise<AuthFormState>;
+  onSuccess?: () => void;
   notice?: string;
 }
 
 /** Shared layout for the sign-in, forgot-password and reset-password forms. */
-export function AuthForm({ mode, action, next, notice }: Props) {
-  const [state, formAction, pending] = useActionState(action, {});
+export function AuthForm({ mode, onSubmit, onSuccess, notice }: Props) {
+  const [state, setState] = useState<AuthFormState>({});
+  const [pending, setPending] = useState(false);
 
   const title = mode === "login" ? "Sign in" : mode === "forgot" ? "Reset your password" : "Choose a new password";
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const values: Record<string, string> = {};
+    form.forEach((value, key) => (values[key] = String(value)));
+    setPending(true);
+    const result = await onSubmit(values);
+    setPending(false);
+    setState(result);
+    if (!result.error && onSuccess) onSuccess();
+  };
 
   return (
     <div className="admin-root flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <p className="mb-6 text-center text-xs font-medium uppercase tracking-[0.18em] text-neutral-500">Portfolio Admin</p>
-        <form action={formAction} className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
           <h1 className="text-lg font-semibold text-neutral-900">{title}</h1>
           {notice ? <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">{notice}</p> : null}
           {state.error ? (
@@ -39,7 +50,6 @@ export function AuthForm({ mode, action, next, notice }: Props) {
           ) : null}
 
           <div className="mt-5 flex flex-col gap-4">
-            {next ? <input type="hidden" name="next" value={next} /> : null}
             {mode !== "reset" ? (
               <Field label="Email" htmlFor="email">
                 <Input id="email" name="email" type="email" autoComplete="email" required autoFocus />
@@ -67,11 +77,11 @@ export function AuthForm({ mode, action, next, notice }: Props) {
 
           <div className="mt-5 flex justify-between text-xs text-neutral-500">
             {mode === "login" ? (
-              <Link href="/admin/forgot-password" className="hover:text-neutral-900">
+              <Link href="/admin/forgot-password/" className="hover:text-neutral-900">
                 Forgot password?
               </Link>
             ) : (
-              <Link href="/admin/login" className="hover:text-neutral-900">
+              <Link href="/admin/login/" className="hover:text-neutral-900">
                 Back to sign in
               </Link>
             )}
