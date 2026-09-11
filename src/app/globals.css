@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+/* Dark mode is driven by a `dark` class on <html> (set by ThemeScript). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------------
+   Colour tokens. Light: warm ivory with charcoal-brown text.
+   Dark: soft charcoal (never pure black) with off-white text.
+   ------------------------------------------------------------------------ */
+:root {
+  --bg: #f5f3ee;
+  --bg-elevated: #ece9e2;
+  --fg: #2a2825;
+  --fg-muted: #6b665f;
+  --fg-faint: #a29c93;
+  --line: #ddd8cf;
+  --line-strong: #bfb9ae;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #1c1b19;
+  --bg-elevated: #26241f;
+  --fg: #e7e3db;
+  --fg-muted: #a39d94;
+  --fg-faint: #6d685f;
+  --line: #322f2b;
+  --line-strong: #4a4640;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-faint: var(--fg-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", "Times New Roman", serif;
+  --font-sans: var(--font-inter), Inter, system-ui, -apple-system, sans-serif;
+
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------ */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* The admin is a tool, not an editorial page: keep scrolling instant there so
+   drag-and-drop measurements and focus jumps are exact. */
+html:has(.admin-root) {
+  scroll-behavior: auto;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-feature-settings: "kern", "liga", "calt";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+:focus-visible {
+  outline: 1.5px solid var(--fg);
+  outline-offset: 3px;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+/* Small uppercase label used across the site. */
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+/* Underline that draws in on hover. */
+.link-line {
+  position: relative;
+  text-decoration: none;
+}
+.link-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.2em;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.5s var(--ease-editorial);
+}
+.link-line:hover::after,
+.link-line:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ------------------------------------------------------------------------
+   Motion. Everything respects prefers-reduced-motion.
+   ------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: no-preference) {
+  html.js .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 1s var(--ease-editorial),
+      transform 1s var(--ease-editorial);
+  }
+  html.js .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  .image-hover img,
+  .image-hover video {
+    transition: transform 1.2s var(--ease-editorial);
+  }
+  .image-hover:hover img,
+  .image-hover:hover video {
+    transform: scale(1.025);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Native range input used by the before/after slider: fully transparent,
+   we draw our own handle. */
+.compare-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+.compare-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 44px;
+  height: 100%;
+  background: transparent;
+  border: 0;
+}
+.compare-range::-moz-range-thumb {
+  width: 44px;
+  height: 100%;
+  background: transparent;
+  border: 0;
+}
+.compare-range::-webkit-slider-runnable-track,
+.compare-range::-moz-range-track {
+  background: transparent;
+  height: 100%;
+}
+.compare-range:focus-visible {
+  outline: none;
+}
+.compare-range:focus-visible + .compare-handle {
+  outline: 1.5px solid var(--bg);
+  outline-offset: 2px;
+}
+
+/* Admin area is always light and uses neutral greys. */
+.admin-root {
+  color-scheme: light;
+  color: #171717;
+  background: #f5f5f4;
+}
