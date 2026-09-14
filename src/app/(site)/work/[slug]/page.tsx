@@ -10,6 +10,9 @@ export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const projects = await getPublishedProjects();
+  // `output: export` refuses an empty list. `_` is not a slugify() result, so it
+  // can never collide with a real project; the page calls notFound() for it.
+  if (projects.length === 0) return [{ slug: "_" }];
   return projects.map((p) => ({ slug: p.slug }));
 }
 
