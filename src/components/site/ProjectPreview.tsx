@@ -13,26 +13,21 @@ interface Props {
   priority?: boolean;
 }
 
-/** Card in the Selected Work grid: image first, then title and meta. */
+/** Card in the Selected Work grid: a modest picture, the title, one line. */
 export function ProjectPreview({ project, variant, className, priority }: Props) {
   const { content, slug } = project;
-  const meta = [content.categories.join(" · "), content.projectStatus].filter(Boolean);
+  const line = (content.subtitle || content.categories[0] || "").split(/[·•]/)[0].trim();
 
   return (
     <Reveal as="li" className={cn("list-none", className)}>
       <Link href={`/work/${slug}`} className="group block">
-        <div
-          className={cn(
-            "image-hover relative w-full overflow-hidden bg-bg-elevated",
-            variant === "featured" ? "aspect-[4/5] md:aspect-[16/10]" : "aspect-[4/5]",
-          )}
-        >
+        <div className="image-hover relative aspect-[3/2] w-full overflow-hidden bg-bg-elevated">
           {content.cover ? (
             <MediaImage
               media={content.cover}
               fill
               priority={priority}
-              sizes={variant === "featured" ? "(min-width: 1440px) 88rem, 100vw" : "(min-width: 768px) 50vw, 100vw"}
+              sizes={variant === "featured" ? "(min-width: 1024px) 33vw, 100vw" : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"}
             />
           ) : (
             <EmptyCover title={content.title} />
@@ -44,19 +39,8 @@ export function ProjectPreview({ project, variant, className, priority }: Props)
           ) : null}
         </div>
 
-        <div className="mt-5 flex items-baseline justify-between gap-6">
-          <h3
-            className={cn(
-              "font-serif font-light leading-[1.05] tracking-tight text-fg",
-              variant === "featured" ? "text-3xl md:text-5xl" : "text-3xl md:text-4xl",
-            )}
-          >
-            {content.title}
-          </h3>
-          {content.year ? <span className="eyebrow shrink-0">{content.year}</span> : null}
-        </div>
-        {content.subtitle ? <p className="mt-2 text-[15px] text-fg">{content.subtitle}</p> : null}
-        {meta.length ? <p className="eyebrow mt-3">{meta.join("  ·  ")}</p> : null}
+        <h3 className="mt-2 font-serif text-sm font-medium leading-tight text-fg md:text-base">{content.title}</h3>
+        {line ? <p className="mt-0.5 line-clamp-1 text-xs text-fg-muted md:text-sm">{line}</p> : null}
       </Link>
     </Reveal>
   );

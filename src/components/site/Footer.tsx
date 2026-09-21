@@ -14,12 +14,12 @@ export function Footer({ settings, links }: { settings: SiteSettings; links: Soc
   const visible = links.filter((l) => l.showInFooter && footerHref(l));
 
   return (
-    <footer className="mt-32 border-t border-line md:mt-44">
+    <footer className="mt-16 border-t border-line md:mt-20">
       <Container className="py-12 md:py-16">
         <div className="grid gap-10 md:grid-cols-12">
           <div className="md:col-span-5">
-            <p className="font-serif text-3xl font-light leading-none">{settings.siteName}</p>
-            {settings.footerLocation ? <p className="eyebrow mt-4">{settings.footerLocation}</p> : null}
+            <p className="font-serif text-lg font-medium leading-none">{settings.siteName}</p>
+            {settings.footerLocation ? <p className="mt-2 text-sm text-fg-muted">{settings.footerLocation}</p> : null}
           </div>
 
           <ul className="flex flex-wrap gap-x-8 gap-y-3 md:col-span-4">
@@ -32,7 +32,7 @@ export function Footer({ settings, links }: { settings: SiteSettings; links: Soc
                     href={href}
                     target={external ? "_blank" : undefined}
                     rel={external ? "noopener noreferrer" : undefined}
-                    className="eyebrow link-line text-fg"
+                    className="link-line text-sm font-medium text-fg"
                   >
                     {link.label}
                   </a>

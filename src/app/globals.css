@@ -4,28 +4,30 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ------------------------------------------------------------------------
-   Colour tokens. Light: warm ivory with charcoal-brown text.
-   Dark: soft charcoal (never pure black) with off-white text.
+   Colour tokens. Light: warm paper with brown ink, not black.
+   Dark: a warm stone, deliberately lighter than charcoal.
    ------------------------------------------------------------------------ */
 :root {
-  --bg: #f5f3ee;
-  --bg-elevated: #ece9e2;
-  --fg: #2a2825;
-  --fg-muted: #6b665f;
-  --fg-faint: #a29c93;
-  --line: #ddd8cf;
-  --line-strong: #bfb9ae;
+  --bg: #fbf7f2;
+  --bg-elevated: #fffdfb;
+  --fg: #3d342c;
+  --fg-muted: #6b6158;
+  --fg-faint: #b7aea4;
+  --line: #e7dfd4;
+  --line-strong: #cfc4b6;
+  --accent: #c45c3e;
   color-scheme: light;
 }
 
 .dark {
-  --bg: #1c1b19;
-  --bg-elevated: #26241f;
-  --fg: #e7e3db;
-  --fg-muted: #a39d94;
-  --fg-faint: #6d685f;
-  --line: #322f2b;
-  --line-strong: #4a4640;
+  --bg: #6a615a;
+  --bg-elevated: #756c64;
+  --fg: #fbf6f0;
+  --fg-muted: #f0e6dc;
+  --fg-faint: #d9cdc0;
+  --line: #82786f;
+  --line-strong: #9a8f84;
+  --accent: #f0c2b4;
   color-scheme: dark;
 }
 
@@ -37,9 +39,10 @@
   --color-fg-faint: var(--fg-faint);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
 
-  --font-serif: var(--font-cormorant), "Cormorant Garamond", "Times New Roman", serif;
-  --font-sans: var(--font-inter), Inter, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-display), "Avenir Next", "Segoe UI", sans-serif;
+  --font-sans: var(--font-figtree), "Segoe UI", system-ui, sans-serif;
 
   --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -70,8 +73,8 @@ body {
 }
 
 ::selection {
-  background: var(--fg);
-  color: var(--bg);
+  background: color-mix(in srgb, var(--accent) 35%, var(--bg));
+  color: var(--fg);
 }
 
 :focus-visible {
@@ -91,9 +94,10 @@ video {
   /* Small uppercase label used across the site. */
   .eyebrow {
     font-family: var(--font-sans);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
+    font-weight: 500;
     line-height: 1.4;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--fg-muted);
   }
@@ -110,7 +114,7 @@ video {
     right: 0;
     bottom: -0.2em;
     height: 1px;
-    background: currentColor;
+    background: var(--accent);
     transform: scaleX(0);
     transform-origin: right;
     transition: transform 0.5s var(--ease-editorial);

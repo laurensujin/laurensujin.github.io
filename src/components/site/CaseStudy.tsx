@@ -15,15 +15,10 @@ interface Props {
   previewBanner?: React.ReactNode;
 }
 
-/** Full case study page: header, cover, content blocks, next/previous links. */
+/** Project page: title, one line, a modest cover, then the work itself. */
 export function CaseStudy({ content, previous, next, previewBanner }: Props) {
   const timeline = content.dateRange || content.year;
-  const meta = [
-    { label: "Category", value: content.categories.join(", ") },
-    { label: "Timeline", value: timeline },
-    { label: "Status", value: content.projectStatus },
-    { label: "Role", value: content.role.join(", ") },
-  ].filter((m) => m.value.trim());
+  const summary = [content.subtitle || content.categories[0], timeline].filter((value) => value?.trim()).join("  ·  ");
   const links = [
     isSafeUrl(content.projectUrl) ? { label: content.projectUrlLabel || "Visit project", url: content.projectUrl } : null,
     isSafeUrl(content.socialUrl) ? { label: content.socialLabel || "Instagram", url: content.socialUrl } : null,
@@ -33,63 +28,51 @@ export function CaseStudy({ content, previous, next, previewBanner }: Props) {
     <article>
       {previewBanner}
       <Container>
-        <header className="pb-12 pt-32 md:pb-16 md:pt-44">
-          <Link href="/#work" className="eyebrow link-line inline-flex items-center gap-2 text-fg">
+        <header className="pb-6 pt-24 md:pt-28">
+          <Link href="/#work" className="link-line inline-flex items-center gap-2 text-sm font-medium text-fg">
             <span aria-hidden>←</span> Work
           </Link>
-          <h1 className="mt-10 max-w-[16ch] font-serif text-[clamp(2.75rem,7vw,6.5rem)] font-light leading-[1.02] tracking-[-0.015em]">
-            {content.title}
-          </h1>
-          {content.subtitle ? <p className="mt-6 max-w-[48ch] text-lg leading-relaxed text-fg-muted md:text-xl">{content.subtitle}</p> : null}
-
-          {meta.length || links.length ? (
-            <dl className="mt-14 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-line pt-6 md:grid-cols-4">
-              {meta.map((m) => (
-                <div key={m.label}>
-                  <dt className="eyebrow">{m.label}</dt>
-                  <dd className="mt-2 text-[15px] leading-relaxed text-fg">{m.value}</dd>
-                </div>
+          <h1 className="mt-4 max-w-[20ch] font-serif text-4xl font-medium leading-[1.05] tracking-[-0.03em] md:text-5xl">{content.title}</h1>
+          {summary || links.length ? (
+            <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-fg-muted">
+              {summary ? <span>{summary}</span> : null}
+              {links.map((l) => (
+                <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="link-line text-fg">
+                  {l.label}
+                </a>
               ))}
-              {links.length ? (
-                <div>
-                  <dt className="eyebrow">Links</dt>
-                  <dd className="mt-2 flex flex-col gap-1 text-[15px]">
-                    {links.map((l) => (
-                      <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="link-line inline-flex w-fit items-center gap-2 text-fg">
-                        {l.label} <span aria-hidden className="text-fg-muted">↗</span>
-                      </a>
-                    ))}
-                  </dd>
-                </div>
-              ) : null}
-            </dl>
+            </p>
           ) : null}
         </header>
       </Container>
 
       {content.coverVideo ? (
-        <div className="relative w-full overflow-hidden bg-bg-elevated">
-          <MediaVideo media={content.coverVideo} poster={content.cover} />
-        </div>
+        <Container>
+          <div className="relative mx-auto aspect-[3/2] w-full max-w-3xl overflow-hidden bg-bg-elevated">
+            <MediaVideo media={content.coverVideo} poster={content.cover} className="h-full w-full object-cover" />
+          </div>
+        </Container>
       ) : content.cover ? (
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-bg-elevated md:aspect-[16/9]">
-          <MediaImage media={content.cover} fill priority sizes="100vw" quality={90} />
-        </div>
+        <Container>
+          <div className="relative mx-auto aspect-[3/2] w-full max-w-3xl overflow-hidden bg-bg-elevated">
+            <MediaImage media={content.cover} fill priority sizes="(min-width: 768px) 48rem, 100vw" quality={90} />
+          </div>
+        </Container>
       ) : null}
 
-      <div className="pt-16 md:pt-24">
+      <div className="pt-10 md:pt-12">
         <Blocks blocks={content.blocks} />
       </div>
 
       {content.tags.length ? (
-        <Container className="mt-20">
-          <p className="eyebrow mx-auto max-w-[64rem]">{content.tags.join("  ·  ")}</p>
+        <Container className="mt-12">
+          <p className="text-sm text-fg-muted">{content.tags.join("  ·  ")}</p>
         </Container>
       ) : null}
 
       {previous || next ? (
-        <Container className="mt-24 md:mt-32">
-          <nav className="grid gap-8 border-t border-line pt-8 md:grid-cols-2" aria-label="More projects">
+        <Container className="mt-14 md:mt-16">
+          <nav className="grid gap-6 border-t border-line pt-6 md:grid-cols-2" aria-label="More projects">
             {previous ? <AdjacentLink project={previous} label="Previous" /> : <span />}
             {next ? <AdjacentLink project={next} label="Next" align="right" /> : null}
           </nav>
@@ -102,8 +85,8 @@ export function CaseStudy({ content, previous, next, previewBanner }: Props) {
 function AdjacentLink({ project, label, align }: { project: PublicProject; label: string; align?: "right" }) {
   return (
     <Link href={`/work/${project.slug}`} className={`group block ${align === "right" ? "md:text-right" : ""}`}>
-      <p className="eyebrow">{label}</p>
-      <p className="link-line mt-3 inline-block font-serif text-3xl font-light leading-tight md:text-4xl">{project.content.title}</p>
+      <p className="text-sm text-fg-muted">{label}</p>
+      <p className="link-line mt-1 inline-block text-base font-medium">{project.content.title}</p>
     </Link>
   );
 }

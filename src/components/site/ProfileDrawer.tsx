@@ -154,7 +154,7 @@ export function ProfileDrawer({ data }: { data: ProfileData }) {
             </div>
           ) : null}
 
-          <h2 id={titleId} className="mt-8 font-serif text-5xl font-light leading-none tracking-tight md:text-6xl">
+          <h2 id={titleId} className="mt-6 font-serif text-3xl font-medium leading-none tracking-tight md:text-4xl">
             {profile.name}
           </h2>
           {profile.title ? <p className="mt-4 text-[15px] text-fg">{profile.title}</p> : null}

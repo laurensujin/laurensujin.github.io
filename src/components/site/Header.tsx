@@ -2,33 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type MouseEvent } from "react";
-import { cn } from "@/lib/utils";
+import { type MouseEvent } from "react";
 import { useDrawer } from "./DrawerProvider";
 
 export function Header({ siteName }: { siteName: string }) {
   const pathname = usePathname();
   const { openDrawer, open } = useDrawer();
-  const [scrolled, setScrolled] = useState(false);
-  const [overHero, setOverHero] = useState(false);
   const isHome = pathname === "/";
-
-  // Solid background once scrolled; light text while floating over the hero image.
-  useEffect(() => {
-    const onScroll = () => {
-      const hero = document.getElementById("hero");
-      const heroBottom = hero ? hero.getBoundingClientRect().bottom : 0;
-      setOverHero(Boolean(hero) && heroBottom > 72);
-      setScrolled(window.scrollY > 8 && !(hero && heroBottom > 72));
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [pathname]);
 
   // On the homepage the name scrolls to the top and WORK scrolls to the grid.
   // Elsewhere they are normal links back to the homepage.
@@ -43,19 +23,13 @@ export function Header({ siteName }: { siteName: string }) {
   };
 
   return (
-    <header
-      className={cn(
-        "fixed inset-x-0 top-0 z-40 transition-[background-color,border-color,color] duration-500",
-        scrolled ? "border-b border-line bg-bg/85 backdrop-blur-md" : "border-b border-transparent bg-transparent",
-        overHero ? "[&_.link-line]:text-[#f5f2ec]" : "[&_.link-line]:text-fg",
-      )}
-    >
-      <nav className="mx-auto flex h-16 max-w-[88rem] items-center justify-between px-6 md:px-10" aria-label="Main">
-        <Link href="/" onClick={(e) => scrollTo(e, null)} className="eyebrow link-line text-fg" aria-label={`${siteName}, back to top`}>
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-line bg-bg/90 backdrop-blur-md">
+      <nav className="mx-auto flex h-14 max-w-[88rem] items-center justify-between px-6 md:px-10" aria-label="Main">
+        <Link href="/" onClick={(e) => scrollTo(e, null)} className="link-line text-sm font-medium text-fg" aria-label={`${siteName}, back to top`}>
           {siteName}
         </Link>
-        <div className="flex items-center gap-8 md:gap-12">
-          <Link href="/#work" onClick={(e) => scrollTo(e, "work")} className="eyebrow link-line text-fg">
+        <div className="flex items-center gap-6 md:gap-8">
+          <Link href="/#work" onClick={(e) => scrollTo(e, "work")} className="link-line text-sm font-medium text-fg">
             Work
           </Link>
           <button
@@ -64,7 +38,7 @@ export function Header({ siteName }: { siteName: string }) {
             aria-haspopup="dialog"
             aria-expanded={open}
             aria-controls="profile-drawer"
-            className="eyebrow link-line cursor-pointer text-fg"
+            className="link-line cursor-pointer text-sm font-medium text-fg"
           >
             Profile
           </button>

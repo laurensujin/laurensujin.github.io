@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Block, BlockOfType } from "@/lib/content/schema";
 import { renderableBlocks } from "@/lib/content/renderable";
 import { refAspect } from "@/lib/media/url";
@@ -13,15 +14,55 @@ import { Figure } from "./Figure";
 const MEASURE = "mx-auto w-full max-w-[44rem]";
 const WIDE = "mx-auto w-full max-w-[64rem]";
 
-/** Renders a list of case-study blocks in order. */
+type NoteBlock = BlockOfType<"paragraph"> | BlockOfType<"caption">;
+
+function isNote(block: Block): block is NoteBlock {
+  return block.type === "paragraph" || block.type === "caption";
+}
+
+/**
+ * A heading and the sentences written under it read as one row: the thing
+ * you did on the left, the short note on the right. Images stay on their own.
+ */
 export function Blocks({ blocks }: { blocks: Block[] }) {
   const visible = renderableBlocks(blocks);
+  const items: ReactNode[] = [];
+
+  for (let i = 0; i < visible.length; i++) {
+    const block = visible[i];
+    if (block.type === "heading") {
+      const notes: NoteBlock[] = [];
+      while (i + 1 < visible.length && isNote(visible[i + 1])) notes.push(visible[++i] as NoteBlock);
+      items.push(<SectionRow key={block.id} heading={block} notes={notes} />);
+    } else {
+      items.push(<BlockView key={block.id} block={block} />);
+    }
+  }
+
+  return <div className="flex flex-col gap-5 md:gap-6">{items}</div>;
+}
+
+function SectionRow({ heading, notes }: { heading: BlockOfType<"heading">; notes: NoteBlock[] }) {
+  const Title = heading.level === 3 ? "h3" : "h2";
   return (
-    <div className="flex flex-col gap-14 md:gap-20">
-      {visible.map((block) => (
-        <BlockView key={block.id} block={block} />
-      ))}
-    </div>
+    <Container>
+      <Reveal className="mx-auto grid w-full max-w-3xl items-baseline gap-1 md:grid-cols-[12rem_1fr] md:gap-8">
+        <Title className="font-serif text-base font-medium leading-snug">{heading.text}</Title>
+        {notes.length ? (
+          <div className="flex flex-col gap-1">
+            {notes.map((note) =>
+              note.type === "caption" ? (
+                <p key={note.id} className="text-sm leading-relaxed text-fg-muted">
+                  {renderInline(note.text)}
+                </p>
+              ) : (
+                <RichText key={note.id} text={note.text} className="flex flex-col gap-1" paragraphClassName="text-sm leading-relaxed text-fg-muted" />
+              ),
+            )}
+          </div>
+        ) : null}
+      </Reveal>
+    </Container>
   );
 }
 
@@ -31,15 +72,17 @@ function BlockView({ block }: { block: Block }) {
       return (
         <Container>
           <Reveal>
-            <Figure media={block.media} caption={block.caption} tag={block.tag} sizes="(min-width: 1440px) 88rem, 100vw" />
+            <Figure media={block.media} caption={block.caption} tag={block.tag} sizes="(min-width: 768px) 48rem, 100vw" className="mx-auto max-w-3xl" />
           </Reveal>
         </Container>
       );
     case "image_full":
       return (
-        <Reveal>
-          <Figure media={block.media} caption={block.caption} tag={block.tag} sizes="100vw" className="[&>figcaption]:px-6 md:[&>figcaption]:px-10" />
-        </Reveal>
+        <Container>
+          <Reveal>
+            <Figure media={block.media} caption={block.caption} tag={block.tag} sizes="(min-width: 1024px) 64rem, 100vw" className="mx-auto max-w-3xl" />
+          </Reveal>
+        </Container>
       );
     case "image_two_column":
       return (
@@ -78,30 +121,15 @@ function BlockView({ block }: { block: Block }) {
     case "video":
       return <Video block={block} />;
     case "heading":
-      return (
-        <Container>
-          <Reveal className={cn(MEASURE, "border-t border-line pt-6")}>
-            {block.eyebrow ? <p className="eyebrow">{block.eyebrow}</p> : null}
-            {block.level === 3 ? (
-              <h3 className="mt-3 font-serif text-3xl font-light leading-tight md:text-4xl">{block.text}</h3>
-            ) : (
-              <h2 className="mt-3 font-serif text-4xl font-light leading-tight md:text-5xl">{block.text}</h2>
-            )}
-          </Reveal>
-        </Container>
-      );
+      return <SectionRow heading={block} notes={[]} />;
     case "paragraph":
       return (
         <Container>
-          <Reveal className={MEASURE}>
+          <Reveal className="mx-auto w-full max-w-3xl">
             <RichText
               text={block.text}
-              className={cn("flex flex-col gap-5", block.columns === 2 && "md:block md:columns-2 md:gap-12 [&>p]:mb-5")}
-              paragraphClassName={cn(
-                block.style === "lead" && "font-serif text-2xl font-light leading-[1.35] text-fg md:text-[2rem]",
-                block.style === "body" && "text-[1.0625rem] leading-[1.75] text-fg",
-                block.style === "small" && "text-sm leading-relaxed text-fg-muted",
-              )}
+              className={cn("flex flex-col gap-2", block.columns === 2 && "md:block md:columns-2 md:gap-8 [&>p]:mb-2")}
+              paragraphClassName="text-sm leading-relaxed text-fg-muted"
             />
           </Reveal>
         </Container>
@@ -110,7 +138,7 @@ function BlockView({ block }: { block: Block }) {
       return (
         <Container>
           <Reveal as="figure" className={WIDE}>
-            <blockquote className="font-serif text-3xl font-light italic leading-[1.25] text-fg md:text-5xl">
+            <blockquote className="border-l-2 border-accent pl-4 text-base leading-relaxed text-fg md:text-lg">
               {renderInline(block.text)}
             </blockquote>
             {block.attribution ? <figcaption className="eyebrow mt-6">{block.attribution}</figcaption> : null}
@@ -130,11 +158,11 @@ function BlockView({ block }: { block: Block }) {
       return (
         <Container>
           <Reveal className={WIDE}>
-            <dl className="grid grid-cols-2 gap-x-8 gap-y-10 border-t border-line pt-8 md:grid-cols-4">
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-4">
               {items.map((item) => (
                 <div key={item.id}>
-                  <dd className="font-serif text-5xl font-light leading-none md:text-6xl">{item.value}</dd>
-                  <dt className="eyebrow mt-3">{item.label}</dt>
+                  <dd className="font-serif text-2xl font-medium leading-none md:text-3xl">{item.value}</dd>
+                  <dt className="mt-1.5 text-sm text-fg-muted">{item.label}</dt>
                 </div>
               ))}
             </dl>
@@ -147,13 +175,13 @@ function BlockView({ block }: { block: Block }) {
       return (
         <Container>
           <Reveal className={WIDE}>
-            <ol className="grid gap-10 border-t border-line pt-8 md:grid-cols-3 md:gap-8">
+            <ol className="grid gap-6 md:grid-cols-3 md:gap-8">
               {block.items.map((item) => (
                 <li key={item.id}>
-                  {item.label ? <p className="eyebrow">{item.label}</p> : null}
-                  {item.title ? <p className="mt-3 font-serif text-3xl font-light leading-tight">{item.title}</p> : null}
+                  {item.label ? <p className="text-sm text-fg-muted">{item.label}</p> : null}
+                  {item.title ? <p className="mt-1 font-serif text-base font-medium leading-tight">{item.title}</p> : null}
                   {item.items.length ? (
-                    <ul className="mt-4 space-y-1.5 text-[15px] leading-relaxed text-fg-muted">
+                    <ul className="mt-2 space-y-1 text-sm leading-relaxed text-fg-muted">
                       {item.items.map((line, index) => (
                         <li key={index}>{line}</li>
                       ))}
@@ -171,12 +199,16 @@ function BlockView({ block }: { block: Block }) {
       return (
         <Container>
           <Reveal className={WIDE}>
-            <ol className="grid grid-cols-2 gap-x-6 gap-y-10 border-t border-line pt-8 md:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]">
+            <ol className="flex flex-wrap items-baseline gap-x-2 gap-y-2">
               {steps.map((step, index) => (
-                <li key={step.id}>
-                  <p className="eyebrow">{String(index + 1).padStart(2, "0")}</p>
-                  <p className="mt-3 font-serif text-2xl font-light leading-tight">{step.title}</p>
-                  {step.description ? <p className="mt-2 text-sm leading-relaxed text-fg-muted">{step.description}</p> : null}
+                <li key={step.id} className="flex items-baseline gap-2 text-sm">
+                  <span className="font-medium text-fg">{step.title}</span>
+                  {step.description ? <span className="text-fg-muted">{step.description}</span> : null}
+                  {index < steps.length - 1 ? (
+                    <span aria-hidden className="text-accent">
+                      →
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ol>
@@ -284,7 +316,7 @@ function ImageSequence({ block }: { block: BlockOfType<"image_sequence"> }) {
         <Reveal className={WIDE}>
           <ol className="flex flex-wrap items-baseline gap-x-3 gap-y-3 border-t border-line pt-8">
             {steps.map((step, index) => (
-              <li key={step.id} className="flex items-baseline gap-3 font-serif text-2xl font-light md:text-3xl">
+              <li key={step.id} className="flex items-baseline gap-3 text-base font-medium">
                 {step.label}
                 {index < steps.length - 1 ? (
                   <span aria-hidden className="text-fg-faint">
@@ -310,8 +342,8 @@ function ImageSequence({ block }: { block: BlockOfType<"image_sequence"> }) {
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <span className="text-fg">{step.label}</span>
               </p>
-              <div className="relative aspect-[4/5] w-full overflow-hidden bg-bg-elevated">
-                {step.media ? <Figure media={step.media} aspect="portrait" sizes={`(min-width: 768px) ${Math.round(100 / count)}vw, 50vw`} /> : null}
+              <div className="relative aspect-[3/2] w-full overflow-hidden bg-bg-elevated">
+                {step.media ? <Figure media={step.media} aspect="landscape" sizes={`(min-width: 768px) ${Math.round(100 / count)}vw, 50vw`} /> : null}
               </div>
               {step.caption ? <p className="mt-2 text-sm text-fg-muted">{step.caption}</p> : null}
             </li>
@@ -383,8 +415,8 @@ function Fragrance({ block }: { block: BlockOfType<"fragrance"> }) {
       <Reveal className="grid gap-10 border-t border-line pt-8 md:grid-cols-12 md:gap-12">
         <div className="md:col-span-6">
           {block.status ? <p className="eyebrow">{block.status}</p> : null}
-          <h3 className="mt-3 font-serif text-4xl font-light italic leading-tight md:text-6xl">{block.name}</h3>
-          {block.story ? <RichText text={block.story} className="mt-6 flex flex-col gap-4" paragraphClassName="text-[1.0625rem] leading-[1.75] text-fg" /> : null}
+          <h3 className="mt-2 font-serif text-2xl font-medium leading-tight md:text-3xl">{block.name}</h3>
+          {block.story ? <RichText text={block.story} className="mt-4 flex flex-col gap-3" paragraphClassName="text-sm leading-relaxed text-fg-muted" /> : null}
           {notes.length ? (
             <dl className="mt-8 border-t border-line">
               {notes.map((n) => (

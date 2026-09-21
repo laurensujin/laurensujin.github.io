@@ -118,7 +118,7 @@ export function Lightbox({ sets, index, onClose, onNavigate }: Props) {
       </div>
 
       <div className="px-6 pb-6 md:px-10">
-        {set.title ? <p className="font-serif text-2xl font-light">{set.title}</p> : null}
+        {set.title ? <p className="font-serif text-xl font-medium">{set.title}</p> : null}
         {set.caption ? <p className="mt-1 max-w-[60ch] text-sm text-fg-muted">{set.caption}</p> : null}
         {credits.length ? <p className="eyebrow mt-3">{credits.join("   ·   ")}</p> : null}
       </div>

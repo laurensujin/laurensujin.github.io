@@ -65,25 +65,13 @@ export function PlaceholderArt({ seed, monogram, label, frame = true, className 
       }}
     >
       <div className="absolute inset-0 opacity-[0.35] mix-blend-multiply" style={{ backgroundImage: `url("${GRAIN}")` }} />
-      {frame ? <div className="absolute inset-4 border border-white/40 md:inset-5" /> : null}
+      {frame ? <div className="absolute inset-3 border border-white/50" /> : null}
       {monogram ? (
-        <span
-          className="absolute -bottom-[0.12em] -right-[0.04em] select-none font-serif italic leading-none text-white/35"
-          style={{ fontSize: "min(52vw, 22rem)" }}
-        >
-          {monogram}
-        </span>
+        <span className="absolute left-3 top-3 select-none font-serif text-sm font-medium text-[#3d342c]/55">{monogram}</span>
       ) : null}
-      {label ? <span className="eyebrow absolute left-7 top-7 text-white/80 md:left-8 md:top-8">{label}</span> : null}
+      {label ? <span className="absolute bottom-3 left-3 text-sm font-medium text-[#3d342c]/70">{label}</span> : null}
     </div>
   );
 }
 
-/** First letters of the first two words, e.g. "The Reader." → "TR". */
-export function monogramFor(title: string): string {
-  const words = title.replace(/[^\p{L}\p{N}\s]/gu, "").split(/\s+/).filter(Boolean);
-  return words
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-}
+

@@ -1,22 +1,20 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import { getSiteSettings } from "@/lib/data/public";
 import { refUrl } from "@/lib/media/url";
 import { siteUrl } from "@/lib/supabase/env";
 import { ThemeScript } from "@/components/site/ThemeScript";
 import "./globals.css";
 
-const cormorant = Cormorant_Garamond({
+const display = Bricolage_Grotesque({
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  style: ["normal", "italic"],
-  variable: "--font-cormorant",
+  variable: "--font-display",
   display: "swap",
 });
 
-const inter = Inter({
+const sans = Figtree({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-figtree",
   display: "swap",
 });
 
@@ -44,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${inter.variable} h-full`} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="en" className={`${display.variable} ${sans.variable} h-full`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>

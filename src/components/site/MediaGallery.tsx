@@ -20,7 +20,7 @@ export function MediaGallery({ sets }: { sets: PhotographySet[] }) {
               <button
                 type="button"
                 onClick={() => setActive(index)}
-                className="image-hover group relative block aspect-[4/5] w-full cursor-pointer overflow-hidden bg-bg-elevated text-left"
+                className="image-hover group relative block aspect-[3/2] w-full cursor-pointer overflow-hidden bg-bg-elevated text-left"
                 aria-label={`Open ${set.title || "photograph"}${set.before && set.after ? ", before and after" : ""}`}
               >
                 <MediaImage media={preview} fill sizes="(min-width: 768px) 33vw, 50vw" />
