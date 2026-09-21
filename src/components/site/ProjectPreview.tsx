@@ -39,8 +39,8 @@ export function ProjectPreview({ project, variant, className, priority }: Props)
           ) : null}
         </div>
 
-        <h3 className="mt-2 font-serif text-sm font-medium leading-tight text-fg md:text-base">{content.title}</h3>
-        {line ? <p className="mt-0.5 line-clamp-1 text-xs text-fg-muted md:text-sm">{line}</p> : null}
+        <h3 className="mt-3 font-serif text-lg font-medium leading-tight text-fg">{content.title}</h3>
+        {line ? <p className="mt-1 line-clamp-1 text-sm text-fg-muted">{line}</p> : null}
       </Link>
     </Reveal>
   );

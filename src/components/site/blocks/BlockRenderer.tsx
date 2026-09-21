@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { Block, BlockOfType } from "@/lib/content/schema";
 import { renderableBlocks } from "@/lib/content/renderable";
 import { refAspect } from "@/lib/media/url";
@@ -7,62 +6,59 @@ import { BeforeAfterSlider } from "../BeforeAfterSlider";
 import { Container } from "../Container";
 import { MediaVideo } from "../MediaVideo";
 import { Reveal } from "../Reveal";
-import { RichText, renderInline } from "../RichText";
 import { Figure } from "./Figure";
 
 /* Layout widths: text sits on a comfortable measure, images go wider. */
 const MEASURE = "mx-auto w-full max-w-[44rem]";
 const WIDE = "mx-auto w-full max-w-[64rem]";
 
-type NoteBlock = BlockOfType<"paragraph"> | BlockOfType<"caption">;
+/** Essay blocks stay in the admin. The public page does not print them. */
+const HIDDEN = new Set(["paragraph", "caption", "quote", "role_tools", "process", "spacer"]);
 
-function isNote(block: Block): block is NoteBlock {
-  return block.type === "paragraph" || block.type === "caption";
+function isTextOnlySequence(block: Block): boolean {
+  return block.type === "image_sequence" && !block.steps.some((step) => step.media);
 }
 
-/**
- * A heading and the sentences written under it read as one row: the thing
- * you did on the left, the short note on the right. Images stay on their own.
- */
-export function Blocks({ blocks }: { blocks: Block[] }) {
-  const visible = renderableBlocks(blocks);
-  const items: ReactNode[] = [];
-
-  for (let i = 0; i < visible.length; i++) {
-    const block = visible[i];
-    if (block.type === "heading") {
-      const notes: NoteBlock[] = [];
-      while (i + 1 < visible.length && isNote(visible[i + 1])) notes.push(visible[++i] as NoteBlock);
-      items.push(<SectionRow key={block.id} heading={block} notes={notes} />);
-    } else {
-      items.push(<BlockView key={block.id} block={block} />);
-    }
+/** A "My Role" heading whose only content is the role list. */
+function isRoleOnlySection(blocks: Block[], index: number): boolean {
+  let sawRole = false;
+  for (let j = index + 1; j < blocks.length; j++) {
+    const next = blocks[j];
+    if (next.type === "heading") break;
+    if (next.type === "role_tools") sawRole = true;
+    else if (!HIDDEN.has(next.type) && !isTextOnlySequence(next)) return false;
   }
-
-  return <div className="flex flex-col gap-5 md:gap-6">{items}</div>;
+  return sawRole;
 }
 
-function SectionRow({ heading, notes }: { heading: BlockOfType<"heading">; notes: NoteBlock[] }) {
-  const Title = heading.level === 3 ? "h3" : "h2";
+function isShown(block: Block): boolean {
+  if (block.type === "fragrance") return Boolean(block.prototypeImage || block.referenceImages.some((item) => item.media));
+  if (block.type === "image_sequence") return block.steps.some((step) => step.media);
+  return !HIDDEN.has(block.type) && block.type !== "heading" && block.type !== "timeline" && block.type !== "stats" && block.type !== "link";
+}
+
+/** Section names and a fragrance name, for the line next to the cover. */
+export function workLabels(blocks: Block[]): { headings: BlockOfType<"heading">[]; name: string } {
+  const visible = renderableBlocks(blocks);
+  const headings: BlockOfType<"heading">[] = [];
+  let name = "";
+  visible.forEach((block, index) => {
+    if (block.type === "heading" && !isRoleOnlySection(visible, index)) headings.push(block);
+    if (block.type === "fragrance" && block.name.trim() && !name) name = block.name.trim();
+  });
+  return { headings, name };
+}
+
+/** Pictures only. The names of the work are rendered beside the cover. */
+export function Blocks({ blocks }: { blocks: Block[] }) {
+  const visible = renderableBlocks(blocks).filter(isShown);
+  if (!visible.length) return null;
   return (
-    <Container>
-      <Reveal className="mx-auto grid w-full max-w-3xl items-baseline gap-1 md:grid-cols-[12rem_1fr] md:gap-8">
-        <Title className="font-serif text-base font-medium leading-snug">{heading.text}</Title>
-        {notes.length ? (
-          <div className="flex flex-col gap-1">
-            {notes.map((note) =>
-              note.type === "caption" ? (
-                <p key={note.id} className="text-sm leading-relaxed text-fg-muted">
-                  {renderInline(note.text)}
-                </p>
-              ) : (
-                <RichText key={note.id} text={note.text} className="flex flex-col gap-1" paragraphClassName="text-sm leading-relaxed text-fg-muted" />
-              ),
-            )}
-          </div>
-        ) : null}
-      </Reveal>
-    </Container>
+    <div className="flex flex-col gap-6">
+      {visible.map((block) => (
+        <BlockView key={block.id} block={block} />
+      ))}
+    </div>
   );
 }
 
@@ -72,7 +68,7 @@ function BlockView({ block }: { block: Block }) {
       return (
         <Container>
           <Reveal>
-            <Figure media={block.media} caption={block.caption} tag={block.tag} sizes="(min-width: 768px) 48rem, 100vw" className="mx-auto max-w-3xl" />
+            <Figure media={block.media} caption={block.caption} tag={block.tag} sizes="(min-width: 768px) 50vw, 100vw" />
           </Reveal>
         </Container>
       );
@@ -80,7 +76,7 @@ function BlockView({ block }: { block: Block }) {
       return (
         <Container>
           <Reveal>
-            <Figure media={block.media} caption={block.caption} tag={block.tag} sizes="(min-width: 1024px) 64rem, 100vw" className="mx-auto max-w-3xl" />
+            <Figure media={block.media} caption={block.caption} tag={block.tag} sizes="(min-width: 1024px) 80rem, 100vw" />
           </Reveal>
         </Container>
       );
@@ -114,45 +110,19 @@ function BlockView({ block }: { block: Block }) {
               afterLabel={block.afterLabel || "After"}
               sizes="(min-width: 1024px) 64rem, 100vw"
             />
-            {block.caption ? <figcaption className="mt-3 text-sm text-fg-muted">{block.caption}</figcaption> : null}
+
           </Reveal>
         </Container>
       );
     case "video":
       return <Video block={block} />;
     case "heading":
-      return <SectionRow heading={block} notes={[]} />;
     case "paragraph":
-      return (
-        <Container>
-          <Reveal className="mx-auto w-full max-w-3xl">
-            <RichText
-              text={block.text}
-              className={cn("flex flex-col gap-2", block.columns === 2 && "md:block md:columns-2 md:gap-8 [&>p]:mb-2")}
-              paragraphClassName="text-sm leading-relaxed text-fg-muted"
-            />
-          </Reveal>
-        </Container>
-      );
-    case "quote":
-      return (
-        <Container>
-          <Reveal as="figure" className={WIDE}>
-            <blockquote className="border-l-2 border-accent pl-4 text-base leading-relaxed text-fg md:text-lg">
-              {renderInline(block.text)}
-            </blockquote>
-            {block.attribution ? <figcaption className="eyebrow mt-6">{block.attribution}</figcaption> : null}
-          </Reveal>
-        </Container>
-      );
     case "caption":
-      return (
-        <Container>
-          <Reveal className={MEASURE}>
-            <p className="text-sm leading-relaxed text-fg-muted">{renderInline(block.text)}</p>
-          </Reveal>
-        </Container>
-      );
+    case "quote":
+    case "process":
+    case "role_tools":
+      return null;
     case "stats": {
       const items = block.items.filter((i) => i.value.trim());
       return (
@@ -166,7 +136,6 @@ function BlockView({ block }: { block: Block }) {
                 </div>
               ))}
             </dl>
-            {block.note ? <p className="mt-6 text-sm text-fg-muted">{block.note}</p> : null}
           </Reveal>
         </Container>
       );
@@ -174,48 +143,18 @@ function BlockView({ block }: { block: Block }) {
     case "timeline":
       return (
         <Container>
-          <Reveal className={WIDE}>
-            <ol className="grid gap-6 md:grid-cols-3 md:gap-8">
+          <Reveal className="mx-auto w-full max-w-3xl">
+            <ol className="flex flex-wrap gap-x-8 gap-y-3">
               {block.items.map((item) => (
                 <li key={item.id}>
-                  {item.label ? <p className="text-sm text-fg-muted">{item.label}</p> : null}
-                  {item.title ? <p className="mt-1 font-serif text-base font-medium leading-tight">{item.title}</p> : null}
-                  {item.items.length ? (
-                    <ul className="mt-2 space-y-1 text-sm leading-relaxed text-fg-muted">
-                      {item.items.map((line, index) => (
-                        <li key={index}>{line}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-            {block.note ? <p className="mt-10 max-w-[60ch] text-sm italic leading-relaxed text-fg-muted">{block.note}</p> : null}
-          </Reveal>
-        </Container>
-      );
-    case "process": {
-      const steps = block.steps.filter((s) => s.title.trim());
-      return (
-        <Container>
-          <Reveal className={WIDE}>
-            <ol className="flex flex-wrap items-baseline gap-x-2 gap-y-2">
-              {steps.map((step, index) => (
-                <li key={step.id} className="flex items-baseline gap-2 text-sm">
-                  <span className="font-medium text-fg">{step.title}</span>
-                  {step.description ? <span className="text-fg-muted">{step.description}</span> : null}
-                  {index < steps.length - 1 ? (
-                    <span aria-hidden className="text-accent">
-                      →
-                    </span>
-                  ) : null}
+                  {item.label ? <p className="text-xs text-fg-muted">{item.label}</p> : null}
+                  {item.title ? <p className="text-sm font-medium text-fg">{item.title}</p> : null}
                 </li>
               ))}
             </ol>
           </Reveal>
         </Container>
       );
-    }
     case "fragrance":
       return <Fragrance block={block} />;
     case "link":
@@ -238,30 +177,9 @@ function BlockView({ block }: { block: Block }) {
                 <span aria-hidden className="text-fg-muted">↗</span>
               </a>
             )}
-            {block.description ? <p className="mt-4 text-sm text-fg-muted">{block.description}</p> : null}
           </Reveal>
         </Container>
       );
-    case "role_tools": {
-      const rows: { label: string; value: string }[] = [];
-      if (block.role.length) rows.push({ label: "Role", value: block.role.join(", ") });
-      if (block.tools.length) rows.push({ label: "Tools", value: block.tools.join(", ") });
-      block.rows.filter((r) => r.value.trim()).forEach((r) => rows.push({ label: r.label, value: r.value }));
-      return (
-        <Container>
-          <Reveal className={WIDE}>
-            <dl className="border-t border-line">
-              {rows.map((row, index) => (
-                <div key={index} className="grid gap-2 border-b border-line py-5 md:grid-cols-12 md:gap-8">
-                  <dt className="eyebrow md:col-span-3">{row.label}</dt>
-                  <dd className="text-[15px] leading-relaxed text-fg md:col-span-9">{row.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </Reveal>
-        </Container>
-      );
-    }
     case "spacer":
       return <div aria-hidden className={cn(block.size === "sm" && "h-2", block.size === "md" && "h-10", block.size === "lg" && "h-24")} />;
   }
@@ -279,7 +197,6 @@ function ImageGrid({ block }: { block: BlockOfType<"image_grid"> }) {
             <Figure key={item.id} media={item.media} caption={item.caption} tag={item.tag} aspect={block.aspect} sizes={sizes} />
           ))}
         </div>
-        {block.caption ? <figcaption className="mt-4 text-sm text-fg-muted">{block.caption}</figcaption> : null}
       </Reveal>
     </Container>
   );
@@ -297,7 +214,6 @@ function Moodboard({ block }: { block: BlockOfType<"moodboard"> }) {
             <Figure key={item.id} media={item.media} caption={item.caption} tag={item.tag} sizes={sizes} className="mb-4 break-inside-avoid md:mb-5" />
           ))}
         </div>
-        {block.caption ? <figcaption className="mt-4 text-sm text-fg-muted">{block.caption}</figcaption> : null}
       </Reveal>
     </Container>
   );
@@ -309,47 +225,21 @@ function ImageSequence({ block }: { block: BlockOfType<"image_sequence"> }) {
   const count = Math.min(Math.max(steps.length, 2), 5);
   const cols = { 2: "md:grid-cols-2", 3: "md:grid-cols-3", 4: "md:grid-cols-4", 5: "md:grid-cols-5" }[count];
 
-  if (!anyImage) {
-    // No images yet: show the workflow as a typographic sequence.
-    return (
-      <Container>
-        <Reveal className={WIDE}>
-          <ol className="flex flex-wrap items-baseline gap-x-3 gap-y-3 border-t border-line pt-8">
-            {steps.map((step, index) => (
-              <li key={step.id} className="flex items-baseline gap-3 text-base font-medium">
-                {step.label}
-                {index < steps.length - 1 ? (
-                  <span aria-hidden className="text-fg-faint">
-                    →
-                  </span>
-                ) : null}
-              </li>
-            ))}
-          </ol>
-          {block.caption ? <p className="mt-4 text-sm text-fg-muted">{block.caption}</p> : null}
-        </Reveal>
-      </Container>
-    );
-  }
+  if (!anyImage) return null;
 
   return (
     <Container>
       <Reveal as="figure">
         <ol className={cn("grid grid-cols-2 gap-4 md:gap-6", cols)}>
-          {steps.map((step, index) => (
+          {steps.map((step) => (
             <li key={step.id}>
-              <p className="eyebrow mb-3 flex items-center gap-2">
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <span className="text-fg">{step.label}</span>
-              </p>
+              {step.label ? <p className="mb-2 text-sm font-medium text-fg">{step.label}</p> : null}
               <div className="relative aspect-[3/2] w-full overflow-hidden bg-bg-elevated">
                 {step.media ? <Figure media={step.media} aspect="landscape" sizes={`(min-width: 768px) ${Math.round(100 / count)}vw, 50vw`} /> : null}
               </div>
-              {step.caption ? <p className="mt-2 text-sm text-fg-muted">{step.caption}</p> : null}
             </li>
           ))}
         </ol>
-        {block.caption ? <figcaption className="mt-4 text-sm text-fg-muted">{block.caption}</figcaption> : null}
       </Reveal>
     </Container>
   );
@@ -375,7 +265,6 @@ function Video({ block }: { block: BlockOfType<"video"> }) {
         ) : isSafeUrl(block.url) ? (
           <video src={block.url} controls playsInline className="h-auto w-full" />
         ) : null}
-        {block.caption ? <figcaption className="mt-3 text-sm text-fg-muted">{block.caption}</figcaption> : null}
       </Reveal>
     </Container>
   );
@@ -403,46 +292,26 @@ function embedUrl(url: string): string | null {
 }
 
 function Fragrance({ block }: { block: BlockOfType<"fragrance"> }) {
-  const notes = [
-    { label: "Top notes", value: block.topNotes },
-    { label: "Middle notes", value: block.middleNotes },
-    { label: "Base notes", value: block.baseNotes },
-  ].filter((n) => n.value.trim());
+  const notes = [block.topNotes, block.middleNotes, block.baseNotes].map((value) => value.trim()).filter(Boolean);
   const references = block.referenceImages.filter((i) => i.media);
 
   return (
     <Container>
-      <Reveal className="grid gap-10 border-t border-line pt-8 md:grid-cols-12 md:gap-12">
-        <div className="md:col-span-6">
-          {block.status ? <p className="eyebrow">{block.status}</p> : null}
-          <h3 className="mt-2 font-serif text-2xl font-medium leading-tight md:text-3xl">{block.name}</h3>
-          {block.story ? <RichText text={block.story} className="mt-4 flex flex-col gap-3" paragraphClassName="text-sm leading-relaxed text-fg-muted" /> : null}
-          {notes.length ? (
-            <dl className="mt-8 border-t border-line">
-              {notes.map((n) => (
-                <div key={n.label} className="grid grid-cols-3 gap-4 border-b border-line py-4">
-                  <dt className="eyebrow">{n.label}</dt>
-                  <dd className="col-span-2 text-[15px] text-fg">{n.value}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : null}
-          {block.notes ? (
-            <div className="mt-8">
-              <p className="eyebrow">Development notes</p>
-              <RichText text={block.notes} className="mt-3 flex flex-col gap-3" paragraphClassName="text-sm leading-relaxed text-fg-muted" />
-            </div>
-          ) : null}
+      <Reveal className="mx-auto w-full max-w-3xl">
+        <div>
+          {block.status ? <p className="text-xs text-fg-muted">{block.status}</p> : null}
+          {block.name ? <h3 className="font-serif text-xl font-medium leading-tight">{block.name}</h3> : null}
+          {notes.length ? <p className="mt-1 text-sm text-fg-muted">{notes.join(" · ")}</p> : null}
         </div>
-        <div className="md:col-span-5 md:col-start-8">
-          {block.prototypeImage ? (
-            <Figure media={block.prototypeImage} caption={block.prototypeCaption} tag="Prototype" sizes="(min-width: 768px) 40vw, 100vw" />
-          ) : null}
-        </div>
+        {block.prototypeImage ? (
+          <div className="mt-4 max-w-sm">
+            <Figure media={block.prototypeImage} tag="Prototype" sizes="(min-width: 768px) 24rem, 100vw" />
+          </div>
+        ) : null}
         {references.length ? (
-          <div className="grid grid-cols-2 gap-4 md:col-span-12 md:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             {references.map((item) => (
-              <Figure key={item.id} media={item.media} caption={item.caption} tag={item.tag} sizes="(min-width: 768px) 25vw, 50vw" />
+              <Figure key={item.id} media={item.media} sizes="(min-width: 768px) 16rem, 50vw" />
             ))}
           </div>
         ) : null}

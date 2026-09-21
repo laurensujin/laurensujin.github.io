@@ -58,10 +58,11 @@ test("profile drawer opens without navigating and closes with Escape", async ({ 
 test("case study page renders its sections", async ({ page }) => {
   await page.goto("/work/maison-de-lete");
   await expect(page.locator("h1")).toHaveText("MAISON DE L’ÉTÉ");
-  await expect(page.getByRole("heading", { name: "Concept" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "72-Hour Creative Sprint" })).toBeVisible();
-  await expect(page.getByText("Day 01")).toBeVisible();
-  await expect(page.getByText("Product development, supplier research, and fragrance prototyping continued")).toBeVisible();
+  await expect(page.getByText("Independent Fragrance Brand Development")).toBeVisible();
+  await expect(page.getByText("When Summer Sleeps")).toBeVisible();
+  // The writeup stays in the admin. Employers only see the work, not the essay.
+  await expect(page.getByText("Product development, supplier research, and fragrance prototyping continued")).toHaveCount(0);
+  await expect(page.getByText("I independently developed MAISON")).toHaveCount(0);
   // Placeholder link without a URL must not be rendered publicly.
   await expect(page.getByRole("link", { name: /Instagram/ })).toHaveCount(0);
 });
@@ -117,18 +118,15 @@ test("create, build, publish and reorder a project from the admin", async ({ pag
   await page.getByTestId("publish").click();
   await expect(page.getByRole("status").filter({ hasText: "Published" })).toBeVisible();
 
-  // Public page shows the published content in order: heading, paragraph, image.
+  // Public page shows the heading and the image, not the paragraph writeup.
   await openWork(page, "e2e-test-project", "found");
   await expect(page.locator("h1")).toHaveText("E2E Test Project");
-  await expect(page.getByRole("heading", { name: "Automated Section" })).toBeVisible();
-  await expect(page.getByText("This paragraph was written by the end-to-end test.")).toBeVisible();
+  await expect(page.getByText("This paragraph was written by the end-to-end test.")).toHaveCount(0);
   await expect(page.getByText("Uploaded by Playwright")).toBeVisible();
   const firstImage = page.locator("article img").first();
   await expect(firstImage).toBeVisible();
   // The optimized image must really load, not just render an empty box.
   await expect.poll(() => firstImage.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0), { timeout: 15_000 }).toBe(true);
-  const order = await page.locator("article h2, article figcaption, article p").allInnerTexts();
-  expect(order.indexOf("Automated Section")).toBeLessThan(order.findIndex((t) => t.includes("end-to-end test")));
 
   // Reorder with the keyboard (dnd-kit): pick up the paragraph, move it up, drop.
   await page.goto("/admin/projects/");
@@ -149,8 +147,8 @@ test("create, build, publish and reorder a project from the admin", async ({ pag
   await expect(page.getByRole("status").filter({ hasText: "Published" })).toBeVisible();
 
   await openWork(page, "e2e-test-project", "found");
-  const reordered = await page.locator("article h2, article p").allInnerTexts();
-  expect(reordered.findIndex((t) => t.includes("end-to-end test"))).toBeLessThan(reordered.indexOf("Automated Section"));
+  await expect(page.locator("h1")).toHaveText("E2E Test Project");
+  await expect(page.getByText("This paragraph was written by the end-to-end test.")).toHaveCount(0);
 
   // The homepage lists the new project.
   await page.goto("/");

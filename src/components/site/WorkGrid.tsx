@@ -6,13 +6,9 @@ import { ProjectPreview } from "./ProjectPreview";
 export function WorkGrid({ label, projects }: { label: string; projects: PublicProject[] }) {
   return (
     <Container>
-      <section id="work" className="scroll-mt-20 pb-4 pt-2" aria-labelledby="work-heading">
-        <h2 id="work-heading" className="text-sm font-medium text-fg">
-          {label}
-        </h2>
-
+      <section id="work" className="scroll-mt-20 pb-4" aria-label={label}>
         {projects.length ? (
-          <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 md:gap-x-5 lg:grid-cols-3">
+          <ul className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2">
             {projects.map((project, index) => (
               <ProjectPreview key={project.id} project={project} priority={index < 3} variant="standard" />
             ))}
