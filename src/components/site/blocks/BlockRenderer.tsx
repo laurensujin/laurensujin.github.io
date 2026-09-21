@@ -37,6 +37,78 @@ function isShown(block: Block): boolean {
   return !HIDDEN.has(block.type) && block.type !== "heading" && block.type !== "timeline" && block.type !== "stats" && block.type !== "link";
 }
 
+/** A paragraph that is really a list of short items, not a writeup. */
+function shortLines(text: string): string[] {
+  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 3 || lines.some((line) => line.length > 40)) return [];
+  return lines;
+}
+
+/**
+ * What a project page shows under the photo: the names of the work,
+ * a short list when one was written as separate lines, and sprint titles.
+ * Paragraphs are not included.
+ */
+export function ProjectBrief({ blocks }: { blocks: Block[] }) {
+  const visible = renderableBlocks(blocks);
+  const sections: { id: string; text: string; lines: string[] }[] = [];
+  visible.forEach((block, index) => {
+    if (block.type !== "heading" || isRoleOnlySection(visible, index)) return;
+    const next = visible[index + 1];
+    sections.push({
+      id: block.id,
+      text: block.text,
+      lines: next?.type === "paragraph" ? shortLines(next.text) : [],
+    });
+  });
+
+  const days = visible.flatMap((block) =>
+    block.type === "timeline" ? block.items.filter((item) => item.title.trim()) : [],
+  );
+  const stats = visible.flatMap((block) =>
+    block.type === "stats" ? block.items.filter((item) => item.value.trim()) : [],
+  );
+
+  if (!sections.length && !days.length && !stats.length) return null;
+
+  return (
+    <Container className="mt-10 md:mt-14">
+      {sections.length ? (
+        <ul className="grid grid-cols-2 gap-x-8 gap-y-5 border-t border-line pt-6 md:grid-cols-3">
+          {sections.map((section) => (
+            <li key={section.id}>
+              <h2 className="text-base font-medium leading-snug text-fg">{section.text}</h2>
+              {section.lines.length ? (
+                <p className="mt-2 text-sm leading-relaxed text-fg-muted">{section.lines.join(" · ")}</p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {days.length ? (
+        <ol className="mt-8 grid grid-cols-3 gap-6">
+          {days.map((day) => (
+            <li key={day.id}>
+              {day.label ? <p className="text-xs text-fg-muted">{day.label}</p> : null}
+              <p className="text-base font-medium text-fg">{day.title}</p>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {stats.length ? (
+        <dl className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
+          {stats.map((item) => (
+            <div key={item.id}>
+              <dd className="font-serif text-2xl font-medium leading-none">{item.value}</dd>
+              <dt className="mt-1.5 text-sm text-fg-muted">{item.label}</dt>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+    </Container>
+  );
+}
+
 /** Section names and a fragrance name, for the line next to the cover. */
 export function workLabels(blocks: Block[]): { headings: BlockOfType<"heading">[]; name: string } {
   const visible = renderableBlocks(blocks);

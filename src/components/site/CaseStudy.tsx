@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ProjectContent } from "@/lib/content/schema";
 import type { PublicProject } from "@/lib/data/types";
 import { isSafeUrl } from "@/lib/utils";
-import { Blocks, workLabels } from "./blocks/BlockRenderer";
+import { Blocks, ProjectBrief, workLabels } from "./blocks/BlockRenderer";
 import { Container } from "./Container";
 import { MediaImage } from "./MediaImage";
 import { MediaVideo } from "./MediaVideo";
@@ -29,7 +29,7 @@ export function CaseStudy({ content, previous, next, previewBanner }: Props) {
     <article>
       {previewBanner}
       <Container>
-        <header className="grid items-end gap-8 pb-8 pt-20 md:grid-cols-12 md:gap-10 md:pt-24">
+        <header className="grid items-start gap-8 pb-8 pt-20 md:grid-cols-12 md:gap-10 md:pt-24">
           <div className={hasCover ? "md:col-span-4" : "md:col-span-8"}>
             <Link href="/#work" className="link-line inline-flex items-center gap-2 text-sm font-medium text-fg">
               <span aria-hidden>←</span> Work
@@ -60,6 +60,7 @@ export function CaseStudy({ content, previous, next, previewBanner }: Props) {
       </Container>
 
       <Blocks blocks={content.blocks} />
+      <ProjectBrief blocks={content.blocks} />
 
       {previous || next ? (
         <Container className="mt-8">
