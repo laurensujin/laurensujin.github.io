@@ -44,21 +44,37 @@ function shortLines(text: string): string[] {
   return lines;
 }
 
+/** First sentence only, so a section keeps its point without the rest of the essay. */
+function firstSentence(text: string): string {
+  const flat = text.replace(/\s*\n+\s*/g, " ").replace(/\s+/g, " ").trim();
+  if (!flat) return "";
+  const match = flat.match(/^.+?[.!?](?=\s|$)/);
+  let sentence = (match?.[0] ?? flat).trim();
+  const max = 240;
+  if (sentence.length > max) {
+    const cut = sentence.slice(0, max);
+    const space = cut.lastIndexOf(" ");
+    sentence = `${(space > 100 ? cut.slice(0, space) : cut).trimEnd()}…`;
+  }
+  return sentence;
+}
+
 /**
- * What a project page shows under the photo: the names of the work,
- * a short list when one was written as separate lines, and sprint titles.
- * Paragraphs are not included.
+ * Under the photo: each part of the project, with one sentence or a short list.
+ * The rest of the writeup stays in the admin.
  */
 export function ProjectBrief({ blocks }: { blocks: Block[] }) {
   const visible = renderableBlocks(blocks);
-  const sections: { id: string; text: string; lines: string[] }[] = [];
+  const sections: { id: string; text: string; lines: string[]; blurb: string }[] = [];
   visible.forEach((block, index) => {
     if (block.type !== "heading" || isRoleOnlySection(visible, index)) return;
     const next = visible[index + 1];
+    const lines = next?.type === "paragraph" ? shortLines(next.text) : [];
     sections.push({
       id: block.id,
       text: block.text,
-      lines: next?.type === "paragraph" ? shortLines(next.text) : [],
+      lines,
+      blurb: lines.length || next?.type !== "paragraph" ? "" : firstSentence(next.text),
     });
   });
 
@@ -74,12 +90,13 @@ export function ProjectBrief({ blocks }: { blocks: Block[] }) {
   return (
     <Container className="mt-10 md:mt-14">
       {sections.length ? (
-        <ul className="grid grid-cols-2 gap-x-8 gap-y-5 border-t border-line pt-6 md:grid-cols-3">
+        <ul className="grid gap-x-10 gap-y-8 border-t border-line pt-6 md:grid-cols-2">
           {sections.map((section) => (
             <li key={section.id}>
               <h2 className="text-base font-medium leading-snug text-fg">{section.text}</h2>
+              {section.blurb ? <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">{section.blurb}</p> : null}
               {section.lines.length ? (
-                <p className="mt-2 text-sm leading-relaxed text-fg-muted">{section.lines.join(" · ")}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">{section.lines.join(" · ")}</p>
               ) : null}
             </li>
           ))}
