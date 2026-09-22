@@ -15,6 +15,7 @@
   --fg-faint: #a3a3ab;
   --line: #e6e6e8;
   --line-strong: #d2d2d6;
+  --accent: #c0563a;
   color-scheme: light;
 }
 
@@ -26,6 +27,7 @@
   --fg-faint: #6e6e76;
   --line: #232327;
   --line-strong: #35353b;
+  --accent: #e08a6b;
   color-scheme: dark;
 }
 
@@ -37,6 +39,7 @@
   --color-fg-faint: var(--fg-faint);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
 
   --font-sans: var(--font-inter), "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 

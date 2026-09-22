@@ -130,7 +130,7 @@ export function HomepageForm({ settings: initial, links }: Props) {
           <p className="mb-2 text-[13px] font-medium text-neutral-700">Live preview</p>
           <div className="overflow-hidden rounded-lg border border-neutral-200 bg-bg text-fg" style={{ colorScheme: "light" }}>
             <div className="origin-top-left" style={{ zoom: 0.55 }}>
-              <Hero settings={s} visual={s.heroImage} preview />
+              <Hero settings={s} preview />
               <Footer settings={s} links={links} />
             </div>
           </div>

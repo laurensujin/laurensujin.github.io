@@ -43,23 +43,27 @@ export function imagesIn(content: ProjectContent): MediaRef[] {
   return images;
 }
 
-/** Selected Work: one tile per uploaded picture. */
-export function WorkGrid({ label, projects }: { label: string; projects: PublicProject[] }) {
+interface Props {
+  label: string;
+  projects: PublicProject[];
+}
+
+/** Selected Work: a close grid, one tile per uploaded picture. */
+export function WorkGrid({ label, projects }: Props) {
   const tiles = projects.flatMap((project) => imagesIn(project.content).map((media) => ({ project, media })));
-  const count = projects.length;
 
   return (
     <Container>
-      <section id="work" className="scroll-mt-24 pt-4" aria-labelledby="work-heading">
+      <section id="work" className="scroll-mt-24" aria-labelledby="work-heading">
         <SectionHeader
           id="work-heading"
           label={label}
-          meta={count ? `${count} ${count === 1 ? "project" : "projects"}` : undefined}
+          meta={projects.length ? `${projects.length} ${projects.length === 1 ? "project" : "projects"}` : undefined}
         />
         {tiles.length ? (
-          <ul className="mt-8 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 md:gap-x-8 md:gap-y-14">
+          <ul className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
             {tiles.map(({ project, media }, index) => (
-              <ProjectPreview key={`${project.id}-${media.path}`} project={project} media={media} index={index} priority={index < 4} />
+              <ProjectPreview key={`${project.id}-${media.path}`} project={project} media={media} priority={index < 8} />
             ))}
           </ul>
         ) : (

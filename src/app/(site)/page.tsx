@@ -6,13 +6,9 @@ import { getPublishedPhotographySets, getPublishedProjects, getSiteSettings } fr
 export default async function HomePage() {
   const [settings, projects, sets] = await Promise.all([getSiteSettings(), getPublishedProjects(), getPublishedPhotographySets()]);
 
-  // Hero image: the one chosen under Homepage, else the first featured cover.
-  const featuredCover = (projects.find((p) => p.isFeatured) ?? projects[0])?.content.cover ?? null;
-  const visual = settings.heroImage ?? featuredCover;
-
   return (
     <>
-      <Hero settings={settings} visual={visual} />
+      <Hero settings={settings} />
       <WorkGrid label={settings.selectedWorkLabel} projects={projects} />
       <PhotographySection settings={settings} sets={sets} />
     </>
