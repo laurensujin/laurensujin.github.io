@@ -1,20 +1,16 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { Inter } from "next/font/google";
 import { getSiteSettings } from "@/lib/data/public";
 import { refUrl } from "@/lib/media/url";
 import { siteUrl } from "@/lib/supabase/env";
 import { ThemeScript } from "@/components/site/ThemeScript";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({
+// One neutral grotesk for the whole site. Hierarchy comes from the type
+// scale in globals.css, not from a second face.
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const sans = Figtree({
-  subsets: ["latin"],
-  variable: "--font-figtree",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -42,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} h-full`} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} h-full`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>

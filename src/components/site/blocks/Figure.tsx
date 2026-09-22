@@ -38,7 +38,7 @@ export function Figure({ media, caption, tag, sizes, className, aspect = "natura
       {caption || tag ? (
         <figcaption className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
           {tag ? <span className="eyebrow text-fg">{tag}</span> : null}
-          {caption ? <span className="text-sm text-fg-muted">{caption}</span> : null}
+          {caption ? <span className="t-body measure text-fg-muted">{caption}</span> : null}
         </figcaption>
       ) : null}
     </figure>

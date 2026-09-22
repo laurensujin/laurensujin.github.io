@@ -19,12 +19,14 @@ function getServerSnapshot(): Theme | null {
   return null;
 }
 
-/** Small text toggle in the footer. Remembers the choice in localStorage. */
+/**
+ * Two words in a hairline frame, the current one marked. Reads as a setting
+ * rather than a control, which is all it needs to be down in the footer.
+ */
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  const toggle = () => {
-    const next: Theme = getSnapshot() === "dark" ? "light" : "dark";
+  const set = (next: Theme) => {
     document.documentElement.classList.toggle("dark", next === "dark");
     try {
       localStorage.setItem("theme", next);
@@ -34,14 +36,24 @@ export function ThemeToggle() {
   };
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      className="eyebrow link-line inline-flex cursor-pointer items-center gap-2 text-fg"
-      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-    >
-      <span aria-hidden className="inline-block h-2 w-2 rounded-full border border-current" style={{ background: theme === "dark" ? "currentColor" : "transparent" }} />
-      {theme === "dark" ? "Dark" : "Light"}
-    </button>
+    <div className="inline-flex border border-line" role="group" aria-label="Colour theme">
+      {(["light", "dark"] as const).map((option) => {
+        // Before hydration the theme is unknown, so neither option is marked.
+        const active = theme === option;
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => set(option)}
+            aria-pressed={theme === null ? undefined : active}
+            className={`eyebrow cursor-pointer px-3 py-2 transition-colors duration-200 ${
+              active ? "bg-fg text-bg" : "text-fg-muted hover:text-fg"
+            }`}
+          >
+            {option}
+          </button>
+        );
+      })}
+    </div>
   );
 }

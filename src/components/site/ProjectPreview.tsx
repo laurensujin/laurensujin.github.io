@@ -11,14 +11,23 @@ interface Props {
   project: PublicProject;
   /** A specific uploaded picture. Falls back to the project cover. */
   media?: MediaRef | null;
+  /** Position in the grid, printed as the tile's index. */
+  index: number;
   className?: string;
   priority?: boolean;
 }
 
-/** One picture in Selected Work, with the project name under it. */
-export function ProjectPreview({ project, media, className, priority }: Props) {
+/** Longest discipline label a tile will print before dropping it, so the
+ *  title always keeps the room it needs. */
+const META_MAX = 24;
+
+/** One picture in Selected Work: index, name and discipline on one ruled row. */
+export function ProjectPreview({ project, media, index, className, priority }: Props) {
   const { content, slug } = project;
   const image = media ?? content.cover;
+  const meta = [content.categories[0], content.subtitle.split("·")[0]]
+    .map((value) => (value ?? "").trim())
+    .find((value) => value.length > 0 && value.length <= META_MAX);
 
   return (
     <Reveal as="li" className={cn("list-none", className)}>
@@ -35,7 +44,12 @@ export function ProjectPreview({ project, media, className, priority }: Props) {
             </div>
           ) : null}
         </div>
-        <h3 className="mt-3 font-serif text-lg font-medium leading-tight text-fg">{content.title}</h3>
+
+        <div className="mt-4 flex items-baseline gap-4 border-t border-line pt-3">
+          <span className="eyebrow tabular-nums">{String(index + 1).padStart(2, "0")}</span>
+          <h3 className="t-title min-w-0 flex-1 text-fg decoration-1 underline-offset-[6px] group-hover:underline">{content.title}</h3>
+          {meta ? <span className="eyebrow shrink-0">{meta}</span> : null}
+        </div>
       </Link>
     </Reveal>
   );

@@ -2,6 +2,7 @@ import type { MediaRef, ProjectContent } from "@/lib/content/schema";
 import type { PublicProject } from "@/lib/data/types";
 import { Container } from "./Container";
 import { ProjectPreview } from "./ProjectPreview";
+import { SectionHeader } from "./SectionHeader";
 
 /** Cover plus every picture uploaded inside the project. Empty slots are skipped. */
 export function imagesIn(content: ProjectContent): MediaRef[] {
@@ -45,18 +46,24 @@ export function imagesIn(content: ProjectContent): MediaRef[] {
 /** Selected Work: one tile per uploaded picture. */
 export function WorkGrid({ label, projects }: { label: string; projects: PublicProject[] }) {
   const tiles = projects.flatMap((project) => imagesIn(project.content).map((media) => ({ project, media })));
+  const count = projects.length;
 
   return (
     <Container>
-      <section id="work" className="scroll-mt-20 pb-4" aria-label={label}>
+      <section id="work" className="scroll-mt-24 pt-4" aria-labelledby="work-heading">
+        <SectionHeader
+          id="work-heading"
+          label={label}
+          meta={count ? `${count} ${count === 1 ? "project" : "projects"}` : undefined}
+        />
         {tiles.length ? (
-          <ul className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+          <ul className="mt-8 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 md:gap-x-8 md:gap-y-14">
             {tiles.map(({ project, media }, index) => (
-              <ProjectPreview key={`${project.id}-${media.path}`} project={project} media={media} priority={index < 4} />
+              <ProjectPreview key={`${project.id}-${media.path}`} project={project} media={media} index={index} priority={index < 4} />
             ))}
           </ul>
         ) : (
-          <p className="mt-8 text-base text-fg-muted">Work is on its way.</p>
+          <p className="t-body mt-8 text-fg-muted">Work is on its way.</p>
         )}
       </section>
     </Container>

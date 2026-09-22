@@ -12,7 +12,7 @@ export function MediaGallery({ sets }: { sets: PhotographySet[] }) {
 
   return (
     <>
-      <ul className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
+      <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 md:gap-x-8 md:gap-y-12">
         {sets.map((set, index) => {
           const preview = set.after ?? set.before!;
           return (
@@ -25,12 +25,12 @@ export function MediaGallery({ sets }: { sets: PhotographySet[] }) {
               >
                 <MediaImage media={preview} fill sizes="(min-width: 768px) 33vw, 50vw" />
                 {set.before && set.after ? (
-                  <span className="eyebrow absolute bottom-3 left-3 bg-bg/80 px-2 py-1 text-fg opacity-0 backdrop-blur-sm transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <span className="eyebrow absolute bottom-3 left-3 bg-bg/85 px-2 py-1 text-fg opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
                     Before / After
                   </span>
                 ) : null}
               </button>
-              {set.title ? <p className="mt-3 text-sm text-fg">{set.title}</p> : null}
+              {set.title ? <p className="t-title mt-4 border-t border-line pt-3 text-fg">{set.title}</p> : null}
             </Reveal>
           );
         })}
