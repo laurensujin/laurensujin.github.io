@@ -38,52 +38,20 @@ function isShown(block: Block): boolean {
   return !HIDDEN.has(block.type) && block.type !== "heading" && block.type !== "timeline" && block.type !== "stats" && block.type !== "link";
 }
 
-/** A paragraph that is really a list of short items, not a writeup. */
-function shortLines(text: string): string[] {
-  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
-  if (lines.length < 3 || lines.some((line) => line.length > 40)) return [];
-  return lines;
-}
-
 /**
- * A short line from the section, not the whole sentence.
- * Stops at a comma or "and" once the line is already long enough.
- */
-function shortBlurb(text: string): string {
-  const flat = text.replace(/\s*\n+\s*/g, " ").replace(/\s+/g, " ").trim();
-  if (!flat) return "";
-  const match = flat.match(/^.+?[.!?](?=\s|$)/);
-  const sentence = (match?.[0] ?? flat).replace(/[.!?]+$/, "").trim();
-  const max = 110;
-  if (sentence.length <= max) return sentence;
-  const window = sentence.slice(0, max);
-  const comma = window.lastIndexOf(",");
-  const and = window.lastIndexOf(" and ");
-  const end = Math.max(comma, and);
-  const cut = end > 50 ? sentence.slice(0, end) : window.slice(0, window.lastIndexOf(" "));
-  // The sentence really was cut short, so say so rather than leaving a fragment
-  // that reads like a missing word.
-  return `${cut.replace(/[,:;]$/, "").trim()}…`;
-}
-
-/**
- * Under the photo: each part of the project, with one sentence or a short list.
- * The rest of the writeup stays in the admin.
+ * Under the photo: an index of the parts of the project, names only. The
+ * writing stays in the admin so the pictures carry the page.
  */
 export function ProjectBrief({ blocks }: { blocks: Block[] }) {
   const visible = renderableBlocks(blocks);
-  const sections: { id: string; number: string; text: string; lines: string[]; blurb: string }[] = [];
+  const sections: { id: string; number: string; text: string }[] = [];
   visible.forEach((block, index) => {
     if (block.type !== "heading" || isRoleOnlySection(visible, index)) return;
-    const next = visible[index + 1];
-    const lines = next?.type === "paragraph" ? shortLines(next.text) : [];
     sections.push({
       id: block.id,
       // The number the author typed in the admin, else this section's position.
       number: block.eyebrow.trim() || String(sections.length + 1).padStart(2, "0"),
       text: block.text,
-      lines,
-      blurb: lines.length || next?.type !== "paragraph" ? "" : shortBlurb(next.text),
     });
   });
 
@@ -101,18 +69,15 @@ export function ProjectBrief({ blocks }: { blocks: Block[] }) {
       <SectionHeader id="overview-heading" label="Overview" meta={sections.length ? `${sections.length} parts` : undefined} />
 
       {sections.length ? (
-        // Each part of the project stays a real heading, so the page can still
-        // be navigated by heading from a screen reader.
-        <ul className="mt-8">
+        // Each part stays a real heading, so the page can still be navigated
+        // by heading from a screen reader.
+        // Columns, not a grid: an index should read 01-05 down the first column
+        // and continue 06-09 in the second, not alternate across the rows.
+        <ul className="mt-6 sm:columns-2 sm:gap-x-12">
           {sections.map((section) => (
-            <li key={section.id} className="grid gap-2 border-b border-line py-5 md:grid-cols-12 md:gap-10">
-              <div className="flex items-baseline gap-4 md:col-span-4">
-                <span className="eyebrow tabular-nums">{section.number}</span>
-                <h3 className="t-title text-fg">{section.text}</h3>
-              </div>
-              <p className="t-body measure text-fg-muted md:col-span-8">
-                {section.blurb || (section.lines.length ? section.lines.slice(0, 5).join(" · ") : null)}
-              </p>
+            <li key={section.id} className="flex items-baseline gap-4 break-inside-avoid border-b border-line py-3">
+              <span className="eyebrow tabular-nums">{section.number}</span>
+              <h3 className="t-title text-fg">{section.text}</h3>
             </li>
           ))}
         </ul>

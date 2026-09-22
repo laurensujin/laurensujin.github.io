@@ -13,7 +13,7 @@ import { MediaVideo } from "./MediaVideo";
  * width its own proportions need, so a portrait and a landscape cover both sit
  * inside the first screen and neither is cropped.
  */
-const COVER_HEIGHT = "66svh";
+const COVER_HEIGHT = "76svh";
 
 interface Props {
   content: ProjectContent;
