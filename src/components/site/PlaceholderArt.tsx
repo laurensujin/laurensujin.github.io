@@ -2,18 +2,19 @@ import { cn } from "@/lib/utils";
 
 /**
  * Generated stand-in visual for images that have not been uploaded yet:
- * a soft, warm gradient study with grain and a hairline frame, plus an
- * optional serif monogram. Deterministic per `seed`, so the same project
- * always gets the same look. Replaced automatically once a real image exists.
+ * a soft neutral gradient study with grain and a hairline frame. Deterministic
+ * per `seed`, so the same project always gets the same look. Replaced
+ * automatically once a real image exists. It stays grey on purpose - the
+ * photography is the only colour on the site.
  */
 
 const PALETTES: [string, string, string][] = [
-  ["#eadfd1", "#cbb59f", "#8b7461"], // sand & clay
-  ["#e6e2db", "#b9b2a6", "#6b655d"], // stone
-  ["#ecdcd4", "#d0aca0", "#8c6156"], // rose clay
-  ["#e4e5dc", "#b6baa5", "#6e735f"], // sage
-  ["#efe3d0", "#d8ba92", "#9a7a51"], // honey
-  ["#e2dfe0", "#b4adb3", "#6d666d"], // mauve grey
+  ["#eeeef0", "#d4d4d8", "#9b9ba3"], // light grey
+  ["#e9e9ec", "#c9c9d0", "#8e8e97"], // cool grey
+  ["#ececec", "#d2d2d2", "#979797"], // neutral grey
+  ["#e7e8ea", "#c6c8cc", "#8b8d93"], // slate grey
+  ["#efeeed", "#d5d3d1", "#9a9795"], // warm grey
+  ["#e8eaea", "#c8cccc", "#8d9192"], // stone grey
 ];
 
 const GRAIN =
@@ -33,7 +34,7 @@ function hash(input: string): number {
 
 interface Props {
   seed: string;
-  /** Large serif letter(s) drawn faintly in the composition. */
+  /** Letter(s) drawn faintly in the corner. */
   monogram?: string;
   /** Small caption in the corner. */
   label?: string;
@@ -65,11 +66,9 @@ export function PlaceholderArt({ seed, monogram, label, frame = true, className 
       }}
     >
       <div className="absolute inset-0 opacity-[0.35] mix-blend-multiply" style={{ backgroundImage: `url("${GRAIN}")` }} />
-      {frame ? <div className="absolute inset-3 border border-white/50" /> : null}
-      {monogram ? (
-        <span className="absolute left-3 top-3 select-none font-serif text-sm font-medium text-[#3d342c]/55">{monogram}</span>
-      ) : null}
-      {label ? <span className="absolute bottom-3 left-3 text-sm font-medium text-[#3d342c]/70">{label}</span> : null}
+      {frame ? <div className="absolute inset-3 border border-white/45" /> : null}
+      {monogram ? <span className="eyebrow absolute left-4 top-4 select-none text-[#17171a]/55">{monogram}</span> : null}
+      {label ? <span className="eyebrow absolute bottom-4 left-4 text-[#17171a]/70">{label}</span> : null}
     </div>
   );
 }

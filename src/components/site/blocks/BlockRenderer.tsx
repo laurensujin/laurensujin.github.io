@@ -6,11 +6,12 @@ import { BeforeAfterSlider } from "../BeforeAfterSlider";
 import { Container } from "../Container";
 import { MediaVideo } from "../MediaVideo";
 import { Reveal } from "../Reveal";
+import { SectionHeader } from "../SectionHeader";
 import { Figure } from "./Figure";
 
 /* Layout widths: text sits on a comfortable measure, images go wider. */
-const MEASURE = "mx-auto w-full max-w-[44rem]";
-const WIDE = "mx-auto w-full max-w-[64rem]";
+const MEASURE = "mx-auto w-full max-w-[42rem]";
+const WIDE = "mx-auto w-full max-w-[62rem]";
 
 /** Essay blocks stay in the admin. The public page does not print them. */
 const HIDDEN = new Set(["paragraph", "caption", "quote", "role_tools", "process", "spacer"]);
@@ -44,19 +45,25 @@ function shortLines(text: string): string[] {
   return lines;
 }
 
-/** First sentence only, so a section keeps its point without the rest of the essay. */
-function firstSentence(text: string): string {
+/**
+ * A short line from the section, not the whole sentence.
+ * Stops at a comma or "and" once the line is already long enough.
+ */
+function shortBlurb(text: string): string {
   const flat = text.replace(/\s*\n+\s*/g, " ").replace(/\s+/g, " ").trim();
   if (!flat) return "";
   const match = flat.match(/^.+?[.!?](?=\s|$)/);
-  let sentence = (match?.[0] ?? flat).trim();
-  const max = 240;
-  if (sentence.length > max) {
-    const cut = sentence.slice(0, max);
-    const space = cut.lastIndexOf(" ");
-    sentence = `${(space > 100 ? cut.slice(0, space) : cut).trimEnd()}…`;
-  }
-  return sentence;
+  const sentence = (match?.[0] ?? flat).replace(/[.!?]+$/, "").trim();
+  const max = 110;
+  if (sentence.length <= max) return sentence;
+  const window = sentence.slice(0, max);
+  const comma = window.lastIndexOf(",");
+  const and = window.lastIndexOf(" and ");
+  const end = Math.max(comma, and);
+  const cut = end > 50 ? sentence.slice(0, end) : window.slice(0, window.lastIndexOf(" "));
+  // The sentence really was cut short, so say so rather than leaving a fragment
+  // that reads like a missing word.
+  return `${cut.replace(/[,:;]$/, "").trim()}…`;
 }
 
 /**
@@ -65,16 +72,18 @@ function firstSentence(text: string): string {
  */
 export function ProjectBrief({ blocks }: { blocks: Block[] }) {
   const visible = renderableBlocks(blocks);
-  const sections: { id: string; text: string; lines: string[]; blurb: string }[] = [];
+  const sections: { id: string; number: string; text: string; lines: string[]; blurb: string }[] = [];
   visible.forEach((block, index) => {
     if (block.type !== "heading" || isRoleOnlySection(visible, index)) return;
     const next = visible[index + 1];
     const lines = next?.type === "paragraph" ? shortLines(next.text) : [];
     sections.push({
       id: block.id,
+      // The number the author typed in the admin, else this section's position.
+      number: block.eyebrow.trim() || String(sections.length + 1).padStart(2, "0"),
       text: block.text,
       lines,
-      blurb: lines.length || next?.type !== "paragraph" ? "" : firstSentence(next.text),
+      blurb: lines.length || next?.type !== "paragraph" ? "" : shortBlurb(next.text),
     });
   });
 
@@ -88,36 +97,44 @@ export function ProjectBrief({ blocks }: { blocks: Block[] }) {
   if (!sections.length && !days.length && !stats.length) return null;
 
   return (
-    <Container className="mt-10 md:mt-14">
+    <Container className="mt-16 md:mt-20">
+      <SectionHeader id="overview-heading" label="Overview" meta={sections.length ? `${sections.length} parts` : undefined} />
+
       {sections.length ? (
-        <ul className="grid gap-x-10 gap-y-8 border-t border-line pt-6 md:grid-cols-2">
+        // Each part of the project stays a real heading, so the page can still
+        // be navigated by heading from a screen reader.
+        <ul className="mt-8">
           {sections.map((section) => (
-            <li key={section.id}>
-              <h2 className="text-base font-medium leading-snug text-fg">{section.text}</h2>
-              {section.blurb ? <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">{section.blurb}</p> : null}
-              {section.lines.length ? (
-                <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">{section.lines.join(" · ")}</p>
-              ) : null}
+            <li key={section.id} className="grid gap-2 border-b border-line py-5 md:grid-cols-12 md:gap-10">
+              <div className="flex items-baseline gap-4 md:col-span-4">
+                <span className="eyebrow tabular-nums">{section.number}</span>
+                <h3 className="t-title text-fg">{section.text}</h3>
+              </div>
+              <p className="t-body measure text-fg-muted md:col-span-8">
+                {section.blurb || (section.lines.length ? section.lines.slice(0, 5).join(" · ") : null)}
+              </p>
             </li>
           ))}
         </ul>
       ) : null}
+
       {days.length ? (
-        <ol className="mt-8 grid grid-cols-3 gap-6">
+        <ol className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3">
           {days.map((day) => (
-            <li key={day.id}>
-              {day.label ? <p className="text-xs text-fg-muted">{day.label}</p> : null}
-              <p className="text-base font-medium text-fg">{day.title}</p>
+            <li key={day.id} className="border-t border-line pt-3">
+              {day.label ? <p className="eyebrow">{day.label}</p> : null}
+              <p className="t-title mt-1 text-fg">{day.title}</p>
             </li>
           ))}
         </ol>
       ) : null}
+
       {stats.length ? (
-        <dl className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
+        <dl className="mt-10 grid grid-cols-2 gap-x-8 gap-y-8 md:grid-cols-4">
           {stats.map((item) => (
-            <div key={item.id}>
-              <dd className="font-serif text-2xl font-medium leading-none">{item.value}</dd>
-              <dt className="mt-1.5 text-sm text-fg-muted">{item.label}</dt>
+            <div key={item.id} className="border-t border-line pt-3">
+              <dd className="t-display-sm text-fg">{item.value}</dd>
+              <dt className="t-body mt-1 text-fg-muted">{item.label}</dt>
             </div>
           ))}
         </dl>
@@ -143,7 +160,7 @@ export function Blocks({ blocks }: { blocks: Block[] }) {
   const visible = renderableBlocks(blocks).filter(isShown);
   if (!visible.length) return null;
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mt-10 flex flex-col gap-10 md:mt-14 md:gap-14">
       {visible.map((block) => (
         <BlockView key={block.id} block={block} />
       ))}
@@ -217,11 +234,11 @@ function BlockView({ block }: { block: Block }) {
       return (
         <Container>
           <Reveal className={WIDE}>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-4">
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-8 md:grid-cols-4">
               {items.map((item) => (
-                <div key={item.id}>
-                  <dd className="font-serif text-2xl font-medium leading-none md:text-3xl">{item.value}</dd>
-                  <dt className="mt-1.5 text-sm text-fg-muted">{item.label}</dt>
+                <div key={item.id} className="border-t border-line pt-3">
+                  <dd className="t-display-sm text-fg">{item.value}</dd>
+                  <dt className="t-body mt-1 text-fg-muted">{item.label}</dt>
                 </div>
               ))}
             </dl>
@@ -233,11 +250,11 @@ function BlockView({ block }: { block: Block }) {
       return (
         <Container>
           <Reveal className="mx-auto w-full max-w-3xl">
-            <ol className="flex flex-wrap gap-x-8 gap-y-3">
+            <ol className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3">
               {block.items.map((item) => (
-                <li key={item.id}>
-                  {item.label ? <p className="text-xs text-fg-muted">{item.label}</p> : null}
-                  {item.title ? <p className="text-sm font-medium text-fg">{item.title}</p> : null}
+                <li key={item.id} className="border-t border-line pt-3">
+                  {item.label ? <p className="eyebrow">{item.label}</p> : null}
+                  {item.title ? <p className="t-title mt-1 text-fg">{item.title}</p> : null}
                 </li>
               ))}
             </ol>
@@ -255,13 +272,13 @@ function BlockView({ block }: { block: Block }) {
                 href={block.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="eyebrow inline-flex items-center gap-3 border border-fg px-6 py-4 text-fg transition-colors duration-300 hover:bg-fg hover:text-bg"
+                className="eyebrow inline-flex items-center gap-3 border border-fg px-6 py-4 text-fg transition-colors duration-200 hover:bg-fg hover:text-bg"
               >
                 {block.label}
                 <span aria-hidden>↗</span>
               </a>
             ) : (
-              <a href={block.url} target="_blank" rel="noopener noreferrer" className="link-line inline-flex items-center gap-2 text-[1.0625rem] text-fg">
+              <a href={block.url} target="_blank" rel="noopener noreferrer" className="link-line t-title inline-flex items-center gap-2 text-fg">
                 {block.label}
                 <span aria-hidden className="text-fg-muted">↗</span>
               </a>
@@ -322,7 +339,7 @@ function ImageSequence({ block }: { block: BlockOfType<"image_sequence"> }) {
         <ol className={cn("grid grid-cols-2 gap-4 md:gap-6", cols)}>
           {steps.map((step) => (
             <li key={step.id}>
-              {step.label ? <p className="mb-2 text-sm font-medium text-fg">{step.label}</p> : null}
+              {step.label ? <p className="eyebrow mb-2 text-fg">{step.label}</p> : null}
               <div className="relative aspect-[3/2] w-full overflow-hidden bg-bg-elevated">
                 {step.media ? <Figure media={step.media} aspect="landscape" sizes={`(min-width: 768px) ${Math.round(100 / count)}vw, 50vw`} /> : null}
               </div>
@@ -387,18 +404,18 @@ function Fragrance({ block }: { block: BlockOfType<"fragrance"> }) {
   return (
     <Container>
       <Reveal className="mx-auto w-full max-w-3xl">
-        <div>
-          {block.status ? <p className="text-xs text-fg-muted">{block.status}</p> : null}
-          {block.name ? <h3 className="font-serif text-xl font-medium leading-tight">{block.name}</h3> : null}
-          {notes.length ? <p className="mt-1 text-sm text-fg-muted">{notes.join(" · ")}</p> : null}
+        <div className="border-t border-line pt-4">
+          {block.status ? <p className="eyebrow">{block.status}</p> : null}
+          {block.name ? <h3 className="t-display-sm mt-1 text-fg">{block.name}</h3> : null}
+          {notes.length ? <p className="t-body measure mt-2 text-fg-muted">{notes.join(" · ")}</p> : null}
         </div>
         {block.prototypeImage ? (
-          <div className="mt-4 max-w-sm">
+          <div className="mt-6 max-w-sm">
             <Figure media={block.prototypeImage} tag="Prototype" sizes="(min-width: 768px) 24rem, 100vw" />
           </div>
         ) : null}
         {references.length ? (
-          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
             {references.map((item) => (
               <Figure key={item.id} media={item.media} sizes="(min-width: 768px) 16rem, 50vw" />
             ))}

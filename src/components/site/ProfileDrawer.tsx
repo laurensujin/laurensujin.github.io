@@ -126,19 +126,19 @@ export function ProfileDrawer({ data }: { data: ProfileData }) {
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "absolute inset-y-0 right-0 flex w-full flex-col overflow-y-auto overscroll-contain bg-bg shadow-2xl shadow-black/10",
+          "absolute inset-y-0 right-0 flex w-full flex-col overflow-y-auto overscroll-contain border-l border-line bg-bg",
           "sm:w-[min(30rem,100%)] lg:w-[38vw] lg:min-w-[28rem] lg:max-w-[36rem]",
           "transition-transform duration-600 ease-[var(--ease-editorial)]",
           open ? "translate-x-0" : "translate-x-full",
         )}
       >
-        <div className="flex items-center justify-between px-6 pt-5 md:px-10">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-bg/90 px-6 py-4 backdrop-blur-md md:px-10">
           <span className="eyebrow">Profile</span>
           <button
             ref={closeRef}
             type="button"
             onClick={closeDrawer}
-            className="eyebrow link-line -mr-1 inline-flex cursor-pointer items-center gap-2 p-1 text-fg"
+            className="eyebrow link-line inline-flex cursor-pointer items-center gap-2 py-1 text-fg"
           >
             Close
             <span aria-hidden className="text-base leading-none">
@@ -147,33 +147,33 @@ export function ProfileDrawer({ data }: { data: ProfileData }) {
           </button>
         </div>
 
-        <div className="px-6 pb-16 pt-10 md:px-10">
+        <div className="px-6 pb-20 pt-10 md:px-10">
           {profile.image ? (
             <div className="relative aspect-[4/5] w-full max-w-[22rem] overflow-hidden bg-bg-elevated">
               <MediaImage media={profile.image} fill sizes="(min-width: 1024px) 24rem, 90vw" />
             </div>
           ) : null}
 
-          <h2 id={titleId} className="mt-6 font-serif text-3xl font-medium leading-none tracking-tight md:text-4xl">
+          <h2 id={titleId} className="t-display mt-8 text-fg">
             {profile.name}
           </h2>
-          {profile.title ? <p className="mt-4 text-[15px] text-fg">{profile.title}</p> : null}
-          {profile.location ? <p className="mt-1 text-[15px] text-fg-muted">{profile.location}</p> : null}
+          {profile.title ? <p className="t-body mt-4 text-fg">{profile.title}</p> : null}
+          {profile.location ? <p className="t-body mt-1 text-fg-muted">{profile.location}</p> : null}
 
           {profile.about ? (
-            <section className="mt-12 border-t border-line pt-6">
+            <section className="mt-14 border-t border-line pt-5">
               <h3 className="eyebrow">About</h3>
-              <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed text-fg">{profile.about}</p>
+              <p className="t-body mt-4 whitespace-pre-line text-fg">{profile.about}</p>
             </section>
           ) : null}
 
           {education.length ? (
-            <section className="mt-12 border-t border-line pt-6">
+            <section className="mt-14 border-t border-line pt-5">
               <h3 className="eyebrow">Education</h3>
-              <ul className="mt-4 space-y-5">
+              <ul className="mt-4">
                 {education.map((e) => (
-                  <li key={e.id} className="text-[15px] leading-relaxed">
-                    {e.school ? <p className="text-fg">{e.school}</p> : null}
+                  <li key={e.id} className="t-body border-b border-line py-4 last:border-b-0 last:pb-0">
+                    {e.school ? <p className="t-title text-fg">{e.school}</p> : null}
                     {e.college ? <p className="text-fg-muted">{e.college}</p> : null}
                     {e.degree || e.major ? (
                       <p className="mt-2 text-fg">{[e.degree, e.major].filter(Boolean).join(" in ")}</p>
@@ -186,7 +186,7 @@ export function ProfileDrawer({ data }: { data: ProfileData }) {
           ) : null}
 
           {visibleLinks.length || resume ? (
-            <section className="mt-12 border-t border-line pt-6">
+            <section className="mt-14 border-t border-line pt-5">
               <h3 className="eyebrow">Links</h3>
               <ul className="mt-4 space-y-3">
                 {visibleLinks.map((link) => {
@@ -198,7 +198,7 @@ export function ProfileDrawer({ data }: { data: ProfileData }) {
                         href={href}
                         target={external ? "_blank" : undefined}
                         rel={external ? "noopener noreferrer" : undefined}
-                        className="link-line inline-flex items-center gap-2 text-[15px] text-fg"
+                        className="link-line t-body inline-flex items-center gap-2 text-fg"
                       >
                         {link.label}
                         <span aria-hidden className="text-fg-muted">
@@ -214,7 +214,7 @@ export function ProfileDrawer({ data }: { data: ProfileData }) {
                       href={mediaUrl(resume.path)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="link-line inline-flex items-center gap-2 text-[15px] text-fg"
+                      className="link-line t-body inline-flex items-center gap-2 text-fg"
                     >
                       Resume
                       <span aria-hidden className="text-fg-muted">
