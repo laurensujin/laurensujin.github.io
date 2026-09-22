@@ -61,11 +61,15 @@ test("case study page renders its sections", async ({ page }) => {
   await expect(page.getByText("Independent Fragrance Brand Development")).toBeVisible();
   await expect(page.getByText("When Summer Sleeps")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Concept" })).toBeVisible();
-  // Section names only. The whole writeup stays in the admin so the pictures carry the page.
-  await expect(page.getByText("The concept phase defined the brand’s positioning")).toHaveCount(0);
-  await expect(page.getByText("Custom fragrance prototypes were commissioned")).toHaveCount(0);
-  await expect(page.getByText("Product development, supplier research, and fragrance prototyping continued")).toHaveCount(0);
-  await expect(page.getByText("I independently developed MAISON")).toHaveCount(0);
+  // Each part is folded away until it is opened, so the page stays short.
+  const concept = page.getByText("The concept phase defined the brand’s positioning");
+  await expect(concept).toBeHidden();
+  await page.getByRole("heading", { name: "Concept" }).click();
+  await expect(concept).toBeVisible();
+  // Other parts stay folded away until they are opened themselves.
+  await expect(page.getByText("Custom fragrance prototypes were commissioned")).toBeHidden();
+  await expect(page.getByText("Product development, supplier research, and fragrance prototyping continued")).toBeHidden();
+  await expect(page.getByText("I independently developed MAISON")).toBeHidden();
   // Placeholder link without a URL must not be rendered publicly.
   await expect(page.getByRole("link", { name: /Instagram/ })).toHaveCount(0);
 });
@@ -125,7 +129,10 @@ test("create, build, publish and reorder a project from the admin", async ({ pag
   await openWork(page, "e2e-test-project", "found");
   await expect(page.locator("h1")).toHaveText("E2E Test Project");
   await expect(page.getByRole("heading", { name: "Automated Section" })).toBeVisible();
-  await expect(page.getByText("This paragraph was written by the end-to-end test.")).toHaveCount(0);
+  const written = page.getByText("This paragraph was written by the end-to-end test.");
+  await expect(written).toBeHidden();
+  await page.getByRole("heading", { name: "Automated Section" }).click();
+  await expect(written).toBeVisible();
   await expect(page.getByText("Uploaded by Playwright")).toBeVisible();
   const firstImage = page.locator("article img").first();
   await expect(firstImage).toBeVisible();

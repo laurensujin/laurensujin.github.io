@@ -6,6 +6,7 @@ import { BeforeAfterSlider } from "../BeforeAfterSlider";
 import { Container } from "../Container";
 import { MediaVideo } from "../MediaVideo";
 import { Reveal } from "../Reveal";
+import { RichText } from "../RichText";
 import { SectionHeader } from "../SectionHeader";
 import { Figure } from "./Figure";
 
@@ -38,13 +39,24 @@ function isShown(block: Block): boolean {
   return !HIDDEN.has(block.type) && block.type !== "heading" && block.type !== "timeline" && block.type !== "stats" && block.type !== "link";
 }
 
+/** Everything written under a heading, up to the next one. */
+function sectionText(blocks: Block[], index: number): string {
+  const parts: string[] = [];
+  for (let j = index + 1; j < blocks.length; j++) {
+    const block = blocks[j];
+    if (block.type === "heading") break;
+    if (block.type === "paragraph" && block.text.trim()) parts.push(block.text.trim());
+  }
+  return parts.join("\n\n");
+}
+
 /**
- * Under the photo: an index of the parts of the project, names only. The
- * writing stays in the admin so the pictures carry the page.
+ * Under the photo: the parts of the project as one list. Each part opens to
+ * show what was written about it, so the page stays short until asked.
  */
 export function ProjectBrief({ blocks }: { blocks: Block[] }) {
   const visible = renderableBlocks(blocks);
-  const sections: { id: string; number: string; text: string }[] = [];
+  const sections: { id: string; number: string; text: string; body: string }[] = [];
   visible.forEach((block, index) => {
     if (block.type !== "heading" || isRoleOnlySection(visible, index)) return;
     sections.push({
@@ -52,6 +64,7 @@ export function ProjectBrief({ blocks }: { blocks: Block[] }) {
       // The number the author typed in the admin, else this section's position.
       number: block.eyebrow.trim() || String(sections.length + 1).padStart(2, "0"),
       text: block.text,
+      body: sectionText(visible, index),
     });
   });
 
@@ -69,24 +82,45 @@ export function ProjectBrief({ blocks }: { blocks: Block[] }) {
       <SectionHeader id="overview-heading" label="Overview" meta={sections.length ? `${sections.length} parts` : undefined} />
 
       {sections.length ? (
-        // Each part stays a real heading, so the page can still be navigated
-        // by heading from a screen reader.
-        // Columns, not a grid: an index should read 01-05 down the first column
-        // and continue 06-09 in the second, not alternate across the rows.
-        <ul className="mt-6 sm:columns-2 sm:gap-x-12">
+        // One column of full-width rows. Two ragged columns of short rules read
+        // as choppy; a single rhythm does not. Each part stays a real heading so
+        // the page can still be navigated by heading from a screen reader.
+        <ul className="mt-6 border-t border-line">
           {sections.map((section) => (
-            <li key={section.id} className="flex items-baseline gap-4 break-inside-avoid border-b border-line py-3">
-              <span className="eyebrow tabular-nums">{section.number}</span>
-              <h3 className="t-title text-fg">{section.text}</h3>
+            <li key={section.id} className="border-b border-line">
+              {section.body ? (
+                <details className="group">
+                  <summary className="flex cursor-pointer list-none items-baseline gap-5 py-4 [&::-webkit-details-marker]:hidden">
+                    <span className="eyebrow tabular-nums">{section.number}</span>
+                    <h3 className="t-title flex-1 text-fg">{section.text}</h3>
+                    <span
+                      aria-hidden
+                      className="t-title shrink-0 text-fg-muted transition-transform duration-200 group-[[open]]:rotate-45"
+                    >
+                      +
+                    </span>
+                  </summary>
+                  <RichText
+                    text={section.body}
+                    className="pb-5 pl-[3.25rem] pr-10"
+                    paragraphClassName="t-body measure text-fg-muted [&+p]:mt-4"
+                  />
+                </details>
+              ) : (
+                <div className="flex items-baseline gap-5 py-4">
+                  <span className="eyebrow tabular-nums">{section.number}</span>
+                  <h3 className="t-title flex-1 text-fg">{section.text}</h3>
+                </div>
+              )}
             </li>
           ))}
         </ul>
       ) : null}
 
       {days.length ? (
-        <ol className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-3">
+        <ol className="mt-12 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-line pt-4 sm:grid-cols-3">
           {days.map((day) => (
-            <li key={day.id} className="border-t border-line pt-3">
+            <li key={day.id}>
               {day.label ? <p className="eyebrow">{day.label}</p> : null}
               <p className="t-title mt-1 text-fg">{day.title}</p>
             </li>
@@ -95,9 +129,9 @@ export function ProjectBrief({ blocks }: { blocks: Block[] }) {
       ) : null}
 
       {stats.length ? (
-        <dl className="mt-10 grid grid-cols-2 gap-x-8 gap-y-8 md:grid-cols-4">
+        <dl className="mt-12 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-line pt-4 md:grid-cols-4">
           {stats.map((item) => (
-            <div key={item.id} className="border-t border-line pt-3">
+            <div key={item.id}>
               <dd className="t-display-sm text-fg">{item.value}</dd>
               <dt className="t-body mt-1 text-fg-muted">{item.label}</dt>
             </div>
