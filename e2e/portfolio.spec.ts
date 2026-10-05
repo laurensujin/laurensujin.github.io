@@ -161,9 +161,9 @@ test("create, build, publish and reorder a project from the admin", async ({ pag
   await expect(page.locator("h1")).toHaveText("E2E Test Project");
   await expect(page.getByRole("heading", { name: "Automated Section" })).toBeVisible();
 
-  // The homepage lists the new project.
+  // The homepage lists the new project once per uploaded picture: the cover and the large image.
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "E2E Test Project" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "E2E Test Project" })).toHaveCount(2);
 });
 
 test("photography set publishes to the Portrait section with a working lightbox", async ({ page }) => {

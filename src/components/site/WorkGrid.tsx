@@ -50,7 +50,11 @@ interface Props {
 
 /** Selected Work: a close grid, one tile per uploaded picture. */
 export function WorkGrid({ label, projects }: Props) {
-  const tiles = projects.flatMap((project) => imagesIn(project.content).map((media) => ({ project, media })));
+  const tiles = projects.flatMap((project): { project: PublicProject; media: MediaRef | null }[] => {
+    const images = imagesIn(project.content);
+    // A project without pictures yet still gets one tile, with a placeholder.
+    return images.length ? images.map((media) => ({ project, media })) : [{ project, media: null }];
+  });
 
   return (
     <Container>
@@ -63,7 +67,7 @@ export function WorkGrid({ label, projects }: Props) {
         {tiles.length ? (
           <ul className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
             {tiles.map(({ project, media }, index) => (
-              <ProjectPreview key={`${project.id}-${media.path}`} project={project} media={media} priority={index < 8} />
+              <ProjectPreview key={`${project.id}-${media?.path ?? "placeholder"}`} project={project} media={media} priority={index < 8} />
             ))}
           </ul>
         ) : (
