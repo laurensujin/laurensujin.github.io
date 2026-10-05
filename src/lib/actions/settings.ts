@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { runAdmin } from "@/lib/auth-client";
 import { mediaRefSchema } from "@/lib/content/schema";
-import { publishToSite, triggerRebuild } from "@/lib/deploy";
+import { publishToSite } from "@/lib/deploy";
 import type { Database } from "@/lib/supabase/database.types";
 
 type SiteSettingsUpdate = Database["public"]["Tables"]["site_settings"]["Update"];
@@ -66,7 +66,7 @@ export async function saveSiteSettings(input: Partial<SiteSettingsInput>) {
       if (value === undefined) continue;
       (update as Record<string, unknown>)[COLUMNS[key as keyof SiteSettingsInput]] = value;
     }
-    if (!Object.keys(update).length) return { triggered: false, message: "Nothing to save." };
+    if (!Object.keys(update).length) throw new Error("Nothing to save.");
 
     const { error } = await supabase.from("site_settings").update(update).eq("id", 1);
     if (error) throw new Error(error.message);
@@ -92,5 +92,5 @@ export async function saveAdminSettings(input: z.input<typeof adminSettingsInput
 
 /** Manual "rebuild the public site" button in Settings. */
 export async function rebuildPublicSite() {
-  return runAdmin(async (supabase) => triggerRebuild(supabase));
+  return runAdmin(async (supabase) => publishToSite(supabase));
 }

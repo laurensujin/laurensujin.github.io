@@ -7,13 +7,14 @@ import { uploadResumeFile } from "@/lib/media/upload";
 import { mediaUrl } from "@/lib/media/url";
 import { cn, formatBytes, formatDate } from "@/lib/utils";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { useToast } from "./Toast";
+import { useRebuildToast, useToast } from "./Toast";
 import { IconExternal, IconUpload } from "./icons";
 import { Badge, Button, Card, PageHeader } from "./ui";
 
 /** Upload, replace, preview and delete resume PDFs. The active one is linked from the profile drawer. */
 export function ResumeManager({ files: initial }: { files: ResumeFile[] }) {
   const toast = useToast();
+  const report = useRebuildToast();
   const [files, setFiles] = useState(initial);
   const [progress, setProgress] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -23,9 +24,9 @@ export function ResumeManager({ files: initial }: { files: ResumeFile[] }) {
   const upload = async (file: File) => {
     setProgress(0);
     try {
-      const created = await uploadResumeFile(file, setProgress);
+      const { file: created, rebuild } = await uploadResumeFile(file, setProgress);
       setFiles((list) => [created, ...list.map((f) => ({ ...f, isActive: false }))]);
-      toast("Resume uploaded and set as current");
+      report("Resume uploaded and set as current", rebuild);
     } catch (error) {
       toast(error instanceof Error ? error.message : "Upload failed", "error");
     } finally {
@@ -39,7 +40,7 @@ export function ResumeManager({ files: initial }: { files: ResumeFile[] }) {
     setBusy(false);
     if (!result.ok) return toast(result.error, "error");
     setFiles((list) => list.map((f) => ({ ...f, isActive: f.id === file.id })));
-    toast("Current resume updated");
+    report("Current resume updated", result.data);
   };
 
   const remove = async () => {
@@ -50,7 +51,7 @@ export function ResumeManager({ files: initial }: { files: ResumeFile[] }) {
     if (!result.ok) return toast(result.error, "error");
     setFiles((list) => list.filter((f) => f.id !== pendingDelete.id));
     setPendingDelete(null);
-    toast("PDF deleted");
+    report("PDF deleted", result.data);
   };
 
   return (

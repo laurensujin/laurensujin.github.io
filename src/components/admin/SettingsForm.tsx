@@ -7,7 +7,7 @@ import type { AdminSettings } from "@/lib/data/admin";
 import type { SiteSettings } from "@/lib/data/types";
 import { testGitHubConnection } from "@/lib/deploy";
 import { MediaField } from "./MediaField";
-import { useToast } from "./Toast";
+import { useRebuildToast, useToast } from "./Toast";
 import { Button, Card, Field, Input, PageHeader, Textarea } from "./ui";
 
 interface Props {
@@ -18,6 +18,7 @@ interface Props {
 
 export function SettingsForm({ settings: initial, admin: initialAdmin, email }: Props) {
   const toast = useToast();
+  const report = useRebuildToast();
   const [s, setS] = useState(initial);
   const [admin, setAdmin] = useState(initialAdmin);
   const [busy, setBusy] = useState<"save" | "deploy" | "test" | "rebuild" | "password" | null>(null);
@@ -29,7 +30,7 @@ export function SettingsForm({ settings: initial, admin: initialAdmin, email }: 
     const result = await saveSiteSettings({ seoTitle: s.seoTitle, seoDescription: s.seoDescription, ogImage: s.ogImage, favicon: s.favicon });
     setBusy(null);
     if (!result.ok) return toast(result.error, "error");
-    toast(result.data.message);
+    report("Saved", result.data);
   };
 
   const saveDeploy = async () => {
@@ -52,7 +53,7 @@ export function SettingsForm({ settings: initial, admin: initialAdmin, email }: 
     const result = await rebuildPublicSite();
     setBusy(null);
     if (!result.ok) return toast(result.error, "error");
-    toast(result.data.triggered ? "Rebuild started. The site updates in a few minutes." : result.data.message, result.data.triggered ? "success" : "info");
+    report(result.data.triggered ? "Rebuild started" : null, result.data);
   };
 
   const changePassword = async (event: FormEvent<HTMLFormElement>) => {
@@ -68,7 +69,7 @@ export function SettingsForm({ settings: initial, admin: initialAdmin, email }: 
   return (
     <>
       <PageHeader title="Settings" />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-6">
           <Card
             title="Search & social preview"
@@ -113,7 +114,7 @@ export function SettingsForm({ settings: initial, admin: initialAdmin, email }: 
 
         <Card
           title="Site deployment"
-          description="The public site is rebuilt by GitHub Actions. Without a token it checks for changes every 15 minutes; with one, publishing rebuilds immediately."
+          description="Each change you publish asks GitHub to rebuild the public site, which needs a token. Without one, changes are saved here but the live site does not update."
           actions={
             <Button variant="primary" size="sm" onClick={saveDeploy} loading={busy === "deploy"}>
               Save
@@ -141,9 +142,9 @@ export function SettingsForm({ settings: initial, admin: initialAdmin, email }: 
             </div>
             {connection ? <p className="text-xs text-neutral-600">{connection}</p> : null}
             <ol className="list-decimal space-y-1 pl-5 text-xs text-neutral-500">
-              <li>On GitHub open Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.</li>
+              <li>Signed in to GitHub as the owner of the repository, open Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.</li>
               <li>Repository access: only this repository. Permissions: Contents → Read and write.</li>
-              <li>Copy the token here, save, then press Test connection.</li>
+              <li>Copy the token here, save, then press Test connection. When the token expires, make a new one the same way.</li>
             </ol>
           </div>
         </Card>

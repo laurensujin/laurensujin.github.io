@@ -5,7 +5,7 @@ import { saveProfile } from "@/lib/actions/profile";
 import type { Education, Profile, SocialLink } from "@/lib/data/types";
 import { newId } from "@/lib/utils";
 import { MediaField } from "./MediaField";
-import { useToast } from "./Toast";
+import { useRebuildToast, useToast } from "./Toast";
 import { ItemList } from "./blocks/ItemList";
 import { Button, Card, Field, Input, PageHeader, Select, Textarea, Toggle } from "./ui";
 
@@ -27,6 +27,7 @@ const KINDS: { value: SocialLink["kind"]; label: string }[] = [
 /** Profile drawer content: bio, image, education and links. */
 export function ProfileForm(props: Props) {
   const toast = useToast();
+  const report = useRebuildToast();
   const [profile, setProfile] = useState(props.profile);
   const [education, setEducation] = useState(props.education);
   const [links, setLinks] = useState(props.links);
@@ -41,7 +42,7 @@ export function ProfileForm(props: Props) {
     });
     setBusy(false);
     if (!result.ok) return toast(result.error, "error");
-    toast("Profile saved");
+    report("Profile saved", result.data);
   };
 
   return (

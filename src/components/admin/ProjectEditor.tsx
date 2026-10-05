@@ -10,7 +10,7 @@ import { formatDate, slugify } from "@/lib/utils";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { MediaField } from "./MediaField";
 import { TagInput } from "./TagInput";
-import { useToast } from "./Toast";
+import { useRebuildToast, useToast } from "./Toast";
 import { BlockEditor } from "./blocks/BlockEditor";
 import { IconExternal } from "./icons";
 import { Button, Card, Field, Input, StatusBadge, Textarea, Toggle } from "./ui";
@@ -23,6 +23,7 @@ import { Button, Card, Field, Input, StatusBadge, Textarea, Toggle } from "./ui"
 export function ProjectEditor({ project }: { project: AdminProject }) {
   const router = useRouter();
   const toast = useToast();
+  const report = useRebuildToast();
   const [content, setContent] = useState<ProjectContent>(project.draft);
   const [status, setStatus] = useState(project.status);
   const [featured, setFeatured] = useState(project.isFeatured);
@@ -98,7 +99,7 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
     setSavedAt(result.data.publishedAt);
     setPublishedSlug(result.data.slug);
     setDirty(false);
-    toast(result.data.rebuild.message.replace(/^Saved\./, "Published."));
+    report("Published", result.data.rebuild);
   };
 
   const preview = async () => {
@@ -114,7 +115,7 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
     setBusy(null);
     if (!result.ok) return toast(result.error, "error");
     setStatus(next);
-    toast(next === "published" ? "Project is live again" : next === "hidden" ? "Project hidden from the site" : "Project unpublished");
+    report(next === "published" ? "Project is live again" : next === "hidden" ? "Project hidden from the site" : "Project unpublished", result.data);
   };
 
   const toggleFeatured = async (value: boolean) => {
@@ -123,7 +124,7 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
     if (!result.ok) {
       setFeatured(!value);
       toast(result.error, "error");
-    }
+    } else report(null, result.data);
   };
 
   const duplicate = async () => {
@@ -153,7 +154,7 @@ export function ProjectEditor({ project }: { project: AdminProject }) {
     setBusy(null);
     setConfirm(null);
     if (!result.ok) return toast(result.error, "error");
-    toast("Project deleted");
+    report("Project deleted", result.data);
     router.push("/admin/projects/");
   };
 

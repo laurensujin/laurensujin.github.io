@@ -27,8 +27,8 @@ export async function registerResume(input: z.input<typeof registerInput>) {
       .single();
     if (error) throw new Error(error.message);
 
-    await publishToSite(supabase);
-    return toResumeFile(data);
+    const rebuild = await publishToSite(supabase);
+    return { file: toResumeFile(data), rebuild };
   });
 }
 

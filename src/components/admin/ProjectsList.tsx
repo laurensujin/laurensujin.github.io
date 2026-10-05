@@ -8,7 +8,7 @@ import type { AdminProject } from "@/lib/data/types";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { MediaThumb } from "./MediaThumb";
 import { DragHandle, SortableList } from "./SortableList";
-import { useToast } from "./Toast";
+import { useRebuildToast, useToast } from "./Toast";
 import { IconExternal, IconPlus } from "./icons";
 import { Badge, Button, EmptyState, PageHeader, StatusBadge, Toggle } from "./ui";
 
@@ -16,6 +16,7 @@ import { Badge, Button, EmptyState, PageHeader, StatusBadge, Toggle } from "./ui
 export function ProjectsList({ projects: initial }: { projects: AdminProject[] }) {
   const router = useRouter();
   const toast = useToast();
+  const report = useRebuildToast();
   const [projects, setProjects] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<AdminProject | null>(null);
@@ -36,7 +37,7 @@ export function ProjectsList({ projects: initial }: { projects: AdminProject[] }
       setProjects(previous);
       toast(result.error, "error");
     } else {
-      toast("Order saved");
+      report("Order saved", result.data);
     }
   };
 
@@ -46,7 +47,7 @@ export function ProjectsList({ projects: initial }: { projects: AdminProject[] }
     if (!result.ok) {
       setProjects((list) => list.map((p) => (p.id === project.id ? { ...p, isFeatured: !value } : p)));
       toast(result.error, "error");
-    }
+    } else report(null, result.data);
   };
 
   const duplicate = async (project: AdminProject) => {
@@ -65,7 +66,7 @@ export function ProjectsList({ projects: initial }: { projects: AdminProject[] }
     if (!result.ok) return toast(result.error, "error");
     setProjects((list) => list.filter((p) => p.id !== pendingDelete.id));
     setPendingDelete(null);
-    toast("Project deleted");
+    report("Project deleted", result.data);
   };
 
   return (

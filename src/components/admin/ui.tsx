@@ -146,7 +146,7 @@ export function Card({ title, description, actions, children, className }: { tit
     <section className={cn("rounded-lg border border-neutral-200 bg-white", className)}>
       {title || actions ? (
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 px-5 py-4">
-          <div>
+          <div className="min-w-0 flex-1 basis-64">
             {title ? <h2 className="text-sm font-semibold text-neutral-900">{title}</h2> : null}
             {description ? <p className="mt-0.5 text-xs text-neutral-500">{description}</p> : null}
           </div>

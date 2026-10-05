@@ -8,7 +8,7 @@ import type { PhotographySet } from "@/lib/data/types";
 import { BeforeAfterSlider } from "@/components/site/BeforeAfterSlider";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { MediaField } from "./MediaField";
-import { useToast } from "./Toast";
+import { useRebuildToast, useToast } from "./Toast";
 import { Button, Card, Field, Input, Select, Textarea } from "./ui";
 
 interface Props {
@@ -19,6 +19,7 @@ interface Props {
 export function PhotographySetForm({ set }: Props) {
   const router = useRouter();
   const toast = useToast();
+  const report = useRebuildToast();
   const [before, setBefore] = useState<MediaRef | null>(set?.before ?? null);
   const [after, setAfter] = useState<MediaRef | null>(set?.after ?? null);
   const [title, setTitle] = useState(set?.title ?? "");
@@ -35,7 +36,12 @@ export function PhotographySetForm({ set }: Props) {
     const result = await savePhotographySet({ id: set?.id, title, caption, before, after, photographerCredit, retouchingCredit, status });
     setBusy(false);
     if (!result.ok) return toast(result.error, "error");
-    toast(status === "published" ? result.data.rebuild.message : "Saved");
+    if (status === "published") report("Saved", result.data.rebuild);
+    else {
+      // A draft is not on the site, but saving one can take a set off it.
+      toast("Saved");
+      report(null, result.data.rebuild);
+    }
     if (!set) router.push("/admin/photography/");
   };
 
@@ -45,7 +51,7 @@ export function PhotographySetForm({ set }: Props) {
     const result = await deletePhotographySet(set.id);
     setBusy(false);
     if (!result.ok) return toast(result.error, "error");
-    toast("Photo set deleted");
+    report("Photo set deleted", result.data);
     router.push("/admin/photography/");
   };
 

@@ -40,7 +40,7 @@ scripts/               create-admin.mjs, generate-seed.mjs
 
 **How content flows.** Each project has two copies of its content: a **draft** (what you edit) and a **live** version (what visitors see). *Save draft* keeps your work private, *Preview draft* shows it as a real page, *Publish* copies the draft to the live version. Photo sets, the profile, the homepage copy and the settings become "live" as soon as you save them.
 
-**How the public site updates.** The public pages are static files built from the live content. Whenever you publish or save something public, the admin records a "content changed" timestamp and, if you have added a GitHub token under Settings, asks GitHub to rebuild immediately (about three minutes). Without a token, a scheduled job checks every 15 minutes and rebuilds only when something changed. Either way you never touch code or git.
+**How the public site updates.** The public pages are static files built from the live content. Whenever you publish or save something public, the admin asks GitHub to rebuild the site with the token from step 9, and the change is live about three minutes later. If the rebuild cannot be started (no token, an expired token, GitHub unreachable), the admin says so in a red message and the live site keeps its previous version. You never touch code or git.
 
 **Security.** Visitors use the public "anon" key, and the database's Row Level Security rules only let it read published content. Only accounts listed in the `admins` table can create, edit, delete or upload anything; the admin pages are just a convenient interface on top of those rules. The `service_role` key is never used by the app.
 
@@ -128,16 +128,16 @@ git commit -m "Describe the change"
 git push
 ```
 
-### 9. Instant publishing (optional but recommended)
+### 9. Connect publishing to GitHub
 
-Out of the box the site refreshes within 15 minutes of a change. To make **Publish** rebuild the site right away:
+The admin rebuilds the public site through GitHub each time you publish, so it needs a GitHub token. Until one is added, changes are saved in the admin but the live site does not update.
 
-1. On GitHub open your profile menu → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Generate new token.
+1. Sign in to GitHub as `laurensujin` (the owner of the repository), then open your profile menu → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Generate new token.
 2. Name it "Portfolio publish", choose an expiry (you can pick one year), and under **Repository access** select **Only select repositories** → `laurensujin.github.io`.
 3. Under **Permissions → Repository permissions** set **Contents** to **Read and write**. Generate the token and copy it.
-4. In the admin open **Settings → Site deployment**, enter `laurensujin/laurensujin.github.io` and the token, press **Save**, then **Test connection**.
+4. In the admin open **Settings → Site deployment**, enter `laurensujin/laurensujin.github.io` and the token, press **Save**, then **Test connection**. It checks that the token is allowed to start a rebuild, without starting one.
 
-When the token expires, publishing keeps working through the 15-minute schedule until you paste a new one.
+When the token expires, every change shows a red "The live site was not updated" message. Make a new token the same way, paste it under **Settings → Site deployment**, and press **Rebuild site now** to put everything saved in the meantime online. The same button helps when a rebuild fails because GitHub itself is having problems: GitHub emails the token's owner about the failed run, and one press once GitHub is back publishes the latest content.
 
 ### 10. Connect a custom domain
 
@@ -153,7 +153,7 @@ Go to `https://your-domain/admin`, enter the email and password from step 5. For
 
 1. Open `/admin` and sign in.
 2. **Projects** → click a project. Change text, upload images into any section (drag files straight onto an image slot), add sections with **Add section**, drag the ⋮⋮ handle to reorder.
-3. Press **Save draft** whenever you like, **Preview draft** to see it, and **Publish** when it is ready. The site rebuilds in about three minutes (with the token from step 9) or within 15 minutes (without it).
+3. Press **Save draft** whenever you like, **Preview draft** to see it, and **Publish** when it is ready. The live site updates about three minutes later.
 4. **Photography** → **Add Photo Set** for new before/after pairs. **Profile**, **Homepage** (including the hero image and the moving line of disciplines), **Resume** and **Settings** work the same way.
 5. **Media Library** shows every image, video and PDF uploaded into projects, photo sets and settings (resume PDFs are managed under **Resume**). Deleting a file that is still used somewhere warns you first and removes it from those places.
 

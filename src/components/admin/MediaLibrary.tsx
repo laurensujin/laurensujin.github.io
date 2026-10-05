@@ -10,7 +10,7 @@ import { cn, formatBytes, formatDate } from "@/lib/utils";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { MediaThumb } from "./MediaThumb";
 import { MediaUploader } from "./MediaUploader";
-import { useToast } from "./Toast";
+import { useRebuildToast, useToast } from "./Toast";
 import { IconClose, IconCopy, IconExternal } from "./icons";
 import { Button, Field, Input, PageHeader } from "./ui";
 
@@ -19,6 +19,7 @@ type Filter = "all" | "image" | "video" | "pdf";
 /** Browse, rename, copy links to, and delete uploaded files. */
 export function MediaLibrary({ items: initial }: { items: MediaItem[] }) {
   const toast = useToast();
+  const report = useRebuildToast();
   const [items, setItems] = useState(initial);
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -73,7 +74,7 @@ export function MediaLibrary({ items: initial }: { items: MediaItem[] }) {
     if (!result.ok) return toast(result.error, "error");
     setItems((list) => list.filter((i) => i.id !== selected.id));
     setSelectedId(null);
-    toast("File deleted");
+    report("File deleted", result.data);
   };
 
   const counts = {

@@ -251,3 +251,63 @@ test("unpublishing hides the project from visitors", async ({ page }) => {
   await expect(page.getByRole("status").filter({ hasText: "unpublished" })).toBeVisible();
   await openWork(page, "e2e-test-project", "missing");
 });
+
+test("the admin says when a change cannot reach the live site", async ({ page }) => {
+  // The admin asks GitHub to rebuild the site straight from the browser.
+  // Answer for GitHub here and record which events were sent.
+  const events: string[] = [];
+  let status = 204;
+  await page.route("https://api.github.com/**", async (route) => {
+    const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST" };
+    if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+    events.push(route.request().postDataJSON().event_type);
+    await route.fulfill({ status, headers: cors, body: status === 204 ? "" : JSON.stringify({ message: "Bad credentials" }) });
+  });
+
+  await login(page);
+  await page.goto("/admin/settings/");
+  const deployment = page.locator("section", { hasText: "Site deployment" });
+  const rebuild = deployment.getByRole("button", { name: "Rebuild site now" });
+
+  // Without a token nothing reaches visitors, and the admin says so.
+  await rebuild.click();
+  await expect(page.getByRole("status").filter({ hasText: "The live site was not updated: add a GitHub token" })).toBeVisible();
+  expect(events).toEqual([]);
+
+  await page.fill("#githubRepo", "laurensujin/laurensujin.github.io");
+  await page.fill("#githubToken", "github_pat_e2e");
+  await deployment.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Deployment settings saved" })).toBeVisible();
+
+  // Test connection checks that the token may start a rebuild, without starting one.
+  await deployment.getByRole("button", { name: "Test connection" }).click();
+  await expect(deployment.getByText("Connected. Publishing will rebuild the site.")).toBeVisible();
+  await rebuild.click();
+  await expect(page.getByRole("status").filter({ hasText: "Rebuild started. The live site updates in a few minutes." })).toBeVisible();
+  expect(events).toEqual(["connection-test", "content-published"]);
+
+  // An expired token is reported even for changes that have no message of their own.
+  status = 401;
+  await page.goto("/admin/projects/");
+  const featured = page.getByRole("switch", { name: "Featured" }).first();
+  const wasFeatured = await featured.getAttribute("aria-checked");
+  await featured.click();
+  await expect(page.getByRole("status").filter({ hasText: "The live site was not updated: GitHub rejected the token" })).toBeVisible();
+
+  // A working token again: the same change goes through without a warning.
+  const warning = page.getByRole("status").filter({ hasText: "The live site was not updated" });
+  await expect(warning).toBeHidden({ timeout: 10_000 });
+  status = 204;
+  await featured.click();
+  await expect.poll(() => events.length).toBe(4);
+  await expect(featured).toHaveAttribute("aria-checked", wasFeatured ?? "false");
+  // Give a wrong warning time to appear before checking there is none.
+  await page.waitForTimeout(500);
+  await expect(warning).toHaveCount(0);
+
+  await page.goto("/admin/settings/");
+  await page.fill("#githubRepo", "");
+  await page.fill("#githubToken", "");
+  await deployment.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Deployment settings saved" })).toBeVisible();
+});

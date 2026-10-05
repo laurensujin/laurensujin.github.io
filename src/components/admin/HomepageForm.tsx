@@ -6,7 +6,7 @@ import type { SiteSettings, SocialLink } from "@/lib/data/types";
 import { Footer } from "@/components/site/Footer";
 import { Hero } from "@/components/site/Hero";
 import { MediaField } from "./MediaField";
-import { useToast } from "./Toast";
+import { useRebuildToast, useToast } from "./Toast";
 import { Button, Card, Field, Input, PageHeader, Textarea } from "./ui";
 
 interface Props {
@@ -17,6 +17,7 @@ interface Props {
 /** Homepage copy and hero image, with a live preview of the landing section and footer. */
 export function HomepageForm({ settings: initial, links }: Props) {
   const toast = useToast();
+  const report = useRebuildToast();
   const [s, setS] = useState(initial);
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<SiteSettings>) => setS((current) => ({ ...current, ...patch }));
@@ -42,7 +43,7 @@ export function HomepageForm({ settings: initial, links }: Props) {
     });
     setBusy(false);
     if (!result.ok) return toast(result.error, "error");
-    toast(result.data.message);
+    report("Saved", result.data);
   };
 
   return (

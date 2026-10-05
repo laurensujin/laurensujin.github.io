@@ -7,12 +7,13 @@ import type { PhotographySet } from "@/lib/data/types";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { MediaThumb } from "./MediaThumb";
 import { DragHandle, SortableList } from "./SortableList";
-import { useToast } from "./Toast";
+import { useRebuildToast, useToast } from "./Toast";
 import { IconPlus } from "./icons";
 import { Button, ButtonLink, EmptyState, PageHeader, StatusBadge, Toggle } from "./ui";
 
 export function PhotographyList({ sets: initial }: { sets: PhotographySet[] }) {
   const toast = useToast();
+  const report = useRebuildToast();
   const [sets, setSets] = useState(initial);
   const [pendingDelete, setPendingDelete] = useState<PhotographySet | null>(null);
   const [busy, setBusy] = useState(false);
@@ -24,7 +25,7 @@ export function PhotographyList({ sets: initial }: { sets: PhotographySet[] }) {
     if (!result.ok) {
       setSets(previous);
       toast(result.error, "error");
-    } else toast("Order saved");
+    } else report("Order saved", result.data);
   };
 
   const togglePublished = async (set: PhotographySet, value: boolean) => {
@@ -34,7 +35,7 @@ export function PhotographyList({ sets: initial }: { sets: PhotographySet[] }) {
     if (!result.ok) {
       setSets((list) => list.map((s) => (s.id === set.id ? { ...s, status: set.status } : s)));
       toast(result.error, "error");
-    }
+    } else report(null, result.data);
   };
 
   const remove = async () => {
@@ -45,7 +46,7 @@ export function PhotographyList({ sets: initial }: { sets: PhotographySet[] }) {
     if (!result.ok) return toast(result.error, "error");
     setSets((list) => list.filter((s) => s.id !== pendingDelete.id));
     setPendingDelete(null);
-    toast("Photo set deleted");
+    report("Photo set deleted", result.data);
   };
 
   return (
